@@ -5,11 +5,12 @@ import { Slot, useRouter, useSegments } from 'expo-router';
 import { supabase } from '@/lib/supabase';
 import { useStore } from '@/store';
 import { View, ActivityIndicator } from 'react-native';
+import React from 'react';
 
 export default function RootLayout() {
     const router = useRouter();
     const segments = useSegments();
-    const { session, setSession, setUser, reset } = useStore();
+    const { session, company, setSession, setUser, setCompany } = useStore();
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
@@ -32,16 +33,10 @@ export default function RootLayout() {
     }, []);
 
     useEffect(() => {
-        const inAuthGroup = segments[0] === '(auth)';
-        const inOnboardingGroup = segments[0] === '(onboarding)';
-        const inAppGroup = segments[0] === '(app)';
-
-        if (!session && !inAuthGroup) {
-            setTimeout(() => router.replace('/(auth)/login'), 0);
-        } else if (session && inAuthGroup) {
+        if (session) {
             checkCompanySetup();
         }
-    }, [session, segments, loading]);
+    }, [session]);
 
     const checkCompanySetup = async () => {
         if (!session?.user) return;
@@ -52,13 +47,24 @@ export default function RootLayout() {
             .eq('id', session.user.id)
             .single();
 
-        if (!userData?.company_id) {
-            router.replace('/(onboarding)/company-setup');
-        } else {
-            useStore.getState().setCompany(userData.companies);
-            router.replace('/(app)');
+        if (userData?.companies) {
+            setCompany(userData.companies as any);
         }
     };
+
+    useEffect(() => {
+        const inAuthGroup = segments[0] === '(auth)';
+        const inOnboardingGroup = segments[0] === '(onboarding)';
+        const inAppGroup = segments[0] === '(app)';
+
+        if (!session && !inAuthGroup) {
+            setTimeout(() => router.replace('/(auth)/login'), 0);
+        } else if (session && !company && !inOnboardingGroup) {
+            router.replace('/(onboarding)/company-setup');
+        } else if (session && company && (inAuthGroup || inOnboardingGroup)) {
+            router.replace('/(app)');
+        }
+    }, [session, company, segments, loading]);
 
     if (loading) {
         return (

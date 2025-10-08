@@ -3,62 +3,75 @@ import { View, TextInput, Pressable, Text } from 'react-native';
 import { useRouter } from 'expo-router';
 import { supabase } from '@/lib/supabase';
 import { useStore } from '@/store';
+import React from 'react';
 
 export default function CompanySetup() {
     const router = useRouter();
-    const { user } = useStore();
+    const { user, setCompany } = useStore();
     const [name, setName] = useState('');
     const [loading, setLoading] = useState(false);
 
     const handleSave = async () => {
-        if (!user) return;
+        if (!user || !name.trim()) {
+            alert('Please enter a company name');
+            return;
+        }
 
         setLoading(true);
 
-        // create company
-        const { data: company, error: companyError } = await supabase
-            .from('companies')
-            .insert({ name })
-            .select()
-            .single();
+        try {
+            // Create company
+            const { data: company, error: companyError } = await supabase
+                .from('companies')
+                .insert({ name: name.trim() })
+                .select()
+                .single();
 
-        if (companyError) {
-            alert(companyError.message);
+            if (companyError) throw companyError;
+
+            // Link user to company
+            const { error: userError } = await supabase.from('users').upsert({
+                id: user.id,
+                email: user.email!,
+                company_id: company.id,
+            });
+
+            if (userError) throw userError;
+
+            setCompany(company);
+            router.replace('/(app)');
+        } catch (error: any) {
+            alert(error.message);
+        } finally {
             setLoading(false);
-            return;
         }
-
-        // link user to company
-        const { error: userError } = await supabase.from('users').insert({
-            id: user.id,
-            email: user.email!,
-            company_id: company.id,
-        });
-
-        if (userError && userError.code !== '23505') {
-            // ignore duplicate key
-            alert(userError.message);
-            setLoading(false);
-            return;
-        }
-
-        useStore.getState().setCompany(company);
-        router.replace('/(app)');
     };
 
     return (
-        <View>
-            <Text>Welcome!</Text>
-            <Text>Let's set up your company</Text>
+        <View className="flex-1 justify-center px-6 bg-white">
+            <Text className="text-3xl font-bold mb-2 text-gray-900">
+                Welcome!
+            </Text>
+            <Text className="text-base text-gray-600 mb-8">
+                Let's set up your company
+            </Text>
 
             <TextInput
+                className="border border-gray-300 rounded-lg px-4 py-3 mb-6 text-base"
                 placeholder="Company Name"
                 value={name}
                 onChangeText={setName}
+                autoFocus
             />
 
-            <Pressable onPress={handleSave} disabled={loading || !name}>
-                <Text>{loading ? 'Saving...' : 'Continue'}</Text>
+            <Pressable
+                className={`bg-blue-600 rounded-lg py-4 ${loading || !name ? 'opacity-60' : 'active:opacity-80'}`}
+                onPress={handleSave}
+                disabled={loading || !name}
+            >
+                <Text className="text-white text-center font-semibold text-base">
+                    {loading ? 'Saving...' : 'Continue'}
+                </Text>
             </Pressable>
         </View>
     );
