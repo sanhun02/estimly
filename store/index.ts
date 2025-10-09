@@ -1,10 +1,6 @@
-import { create } from 'zustand';
-import { Session, User } from '@supabase/supabase-js';
-import { Database } from '@/lib/types';
-
-type Company = Database['public']['Tables']['companies']['Row'];
-type Client = Database['public']['Tables']['clients']['Row'];
-type Estimate = Database['public']['Tables']['estimates']['Row'];
+import { create } from "zustand";
+import { Session, User } from "@supabase/supabase-js";
+import { Company, Client, Estimate } from "@/lib/types";
 
 interface AppState {
     // auth
@@ -30,6 +26,7 @@ interface AppState {
 
     addEstimate: (estimate: Estimate) => void;
     updateEstimate: (id: string, updates: Partial<Estimate>) => void;
+    deleteEstimate: (id: string) => void;
 
     reset: () => void;
 }
@@ -77,6 +74,11 @@ export const useStore = create<AppState>((set) => ({
             estimates: state.estimates.map((e) =>
                 e.id === id ? { ...e, ...updates } : e
             ),
+        })),
+
+    deleteEstimate: (id) =>
+        set((state) => ({
+            estimates: state.estimates.filter((e) => e.id !== id),
         })),
 
     reset: () =>
