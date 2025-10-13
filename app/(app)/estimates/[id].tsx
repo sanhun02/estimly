@@ -25,6 +25,7 @@ export default function EstimateDetailScreen() {
     const [estimate, setEstimate] = useState<Estimate | null>(null);
     const [items, setItems] = useState<EstimateItem[]>([]);
     const [client, setClient] = useState<Client | null>(null);
+    const [sending, setSending] = useState(false);
 
     useEffect(() => {
         loadEstimate();
@@ -96,6 +97,71 @@ export default function EstimateDetailScreen() {
                 },
             ]
         );
+    };
+
+    const handleGeneratePDF = async () => {
+        try {
+            setSending(true);
+
+            const { data, error } = await supabase.functions.invoke(
+                "generate-pdf",
+                {
+                    body: { estimateId: id },
+                }
+            );
+
+            if (error) throw error;
+
+            alert("PDF generated successfully!");
+            loadEstimate();
+        } catch (error: any) {
+            alert(error.message);
+        } finally {
+            setSending(false);
+        }
+    };
+
+    const handleSendEstimate = async () => {
+        if (!client?.email) {
+            alert("This client has no email address");
+            return;
+        }
+
+        try {
+            setSending(true);
+
+            // generate PDF if it doesn't exist
+            if (!estimate?.pdf_url) {
+                const { error: pdfError } = await supabase.functions.invoke(
+                    "generate-pdf",
+                    {
+                        body: { estimateId: id },
+                    }
+                );
+                if (pdfError) {
+                    throw pdfError;
+                }
+            }
+
+            // then send email
+            const result = await supabase.functions.invoke(
+                "send-estimate-email",
+                {
+                    body: { estimateId: id },
+                }
+            );
+
+            if (result.error) {
+                throw result.error;
+            }
+
+            alert(`Estimate sent to ${client.email}!`);
+            await loadEstimate();
+        } catch (error: any) {
+            alert(error.message || "Failed to send estimate");
+        } finally {
+            setSending(false);
+        }
     };
 
     const formatCurrency = (amount: number) => {
@@ -342,22 +408,36 @@ export default function EstimateDetailScreen() {
                 <View className="p-4 bg-white border-t border-gray-200">
                     <Pressable
                         className="bg-blue-600 rounded-lg py-4 flex-row items-center justify-center active:opacity-80 mb-3"
-                        onPress={() => alert("Send functionality coming soon!")}
+                        onPress={handleSendEstimate}
+                        disabled={sending}
                     >
-                        <Mail size={20} color="white" />
-                        <Text className="text-white text-base font-semibold ml-2">
-                            Send Estimate
-                        </Text>
+                        {sending ? (
+                            <ActivityIndicator color="white" />
+                        ) : (
+                            <>
+                                <Mail size={20} color="white" />
+                                <Text className="text-white text-base font-semibold ml-2">
+                                    Send to Client
+                                </Text>
+                            </>
+                        )}
                     </Pressable>
 
                     <Pressable
                         className="bg-gray-100 rounded-lg py-4 flex-row items-center justify-center active:opacity-80"
-                        onPress={() => alert("PDF preview coming soon!")}
+                        onPress={handleGeneratePDF}
+                        disabled={sending}
                     >
-                        <FileText size={20} color="#374151" />
-                        <Text className="text-gray-700 text-base font-semibold ml-2">
-                            Preview PDF
-                        </Text>
+                        {sending ? (
+                            <ActivityIndicator color="#374151" />
+                        ) : (
+                            <>
+                                <FileText size={20} color="#374151" />
+                                <Text className="text-gray-700 text-base font-semibold ml-2">
+                                    Generate PDF
+                                </Text>
+                            </>
+                        )}
                     </Pressable>
                 </View>
             )}

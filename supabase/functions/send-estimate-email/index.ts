@@ -44,7 +44,7 @@ serve(async (req) => {
         }
 
         // create public view URL
-        const publicUrl = `${supabaseUrl}/functions/v1/public-estimate-view?id=${estimateId}`;
+        const publicUrl = `https://estimate-viewer.vercel.app/estimate/${estimateId}`;
 
         // send email via SendGrid
         const emailData = {
@@ -55,54 +55,61 @@ serve(async (req) => {
                 },
             ],
             from: {
-                email: company.email || "noreply@estimly.app",
+                email: "sanyahhunter@gmail.com",
                 name: company.name,
             },
             content: [
                 {
                     type: "text/html",
                     value: `
-          <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto;">
-            <h2>New Estimate from ${company.name}</h2>
-            <p>Hi ${client.name},</p>
-            <p>Please review your estimate for the upcoming project.</p>
-            
-            <div style="background: #f3f4f6; padding: 20px; border-radius: 8px; margin: 20px 0;">
-              <h3 style="margin-top: 0;">Estimate #${estimate.estimate_number}</h3>
-              <p style="font-size: 24px; font-weight: bold; color: #2563eb; margin: 10px 0;">
-                $${estimate.total.toFixed(2)}
-              </p>
-              ${
-                  estimate.deposit_amount > 0
-                      ? `
-                <p style="color: #059669;">
-                  Deposit Required: $${estimate.deposit_amount.toFixed(2)}
-                </p>
-              `
-                      : ""
-              }
-            </div>
+    <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto;">
+      <h2>New Estimate from ${company.name}</h2>
+      <p>Hi ${client.name},</p>
+      <p>Please review your estimate for the upcoming project.</p>
+      
+      <div style="background: #f3f4f6; padding: 20px; border-radius: 8px; margin: 20px 0;">
+        <h3 style="margin-top: 0;">Estimate #${estimate.estimate_number}</h3>
+        <p style="font-size: 24px; font-weight: bold; color: #2563eb; margin: 10px 0;">
+          $${estimate.total.toFixed(2)}
+        </p>
+        ${
+            estimate.deposit_amount > 0
+                ? `
+          <p style="color: #059669;">
+            Deposit Required: $${estimate.deposit_amount.toFixed(2)}
+          </p>
+        `
+                : ""
+        }
+      </div>
 
-            <a href="${publicUrl}" 
-               style="display: inline-block; background: #2563eb; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: 600;">
-              View & Accept Estimate
-            </a>
+      <a href="${publicUrl}" 
+         target="_blank"
+         rel="noopener noreferrer"
+         style="display: inline-block; background: #2563eb; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: 600;">
+        View & Accept Estimate
+      </a>
 
-            ${
-                estimate.pdf_url
-                    ? `
-              <p style="margin-top: 20px;">
-                <a href="${estimate.pdf_url}" style="color: #2563eb;">Download PDF</a>
-              </p>
-            `
-                    : ""
-            }
+      ${
+          estimate.pdf_url
+              ? `
+        <p style="margin-top: 20px;">
+          <a href="${estimate.pdf_url}" target="_blank" style="color: #2563eb;">Download PDF</a>
+        </p>
+      `
+              : ""
+      }
 
-            <p style="margin-top: 30px; color: #6b7280; font-size: 14px;">
-              If you have any questions, please contact us at ${company.email || company.phone}
-            </p>
-          </div>
-        `,
+      <p style="margin-top: 30px; color: #6b7280; font-size: 14px;">
+        If the button doesn't work, copy and paste this link into your browser:<br>
+        <a href="${publicUrl}" style="color: #2563eb;">${publicUrl}</a>
+      </p>
+
+      <p style="margin-top: 20px; color: #6b7280; font-size: 14px;">
+        If you have any questions, please contact us at ${company.email || company.phone}
+      </p>
+    </div>
+  `,
                 },
             ],
         };
@@ -137,7 +144,7 @@ serve(async (req) => {
             }),
             { headers: { ...corsHeaders, "Content-Type": "application/json" } }
         );
-    } catch (error) {
+    } catch (error: any) {
         return new Response(JSON.stringify({ error: error.message }), {
             status: 400,
             headers: { ...corsHeaders, "Content-Type": "application/json" },
