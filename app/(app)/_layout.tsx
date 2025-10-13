@@ -1,31 +1,31 @@
-import { Tabs } from 'expo-router';
-import { Users, FileText, Home, Settings } from 'lucide-react-native';
-import React from 'react';
+import { Tabs } from "expo-router";
+import { Users, FileText, Home, Settings } from "lucide-react-native";
+import React from "react";
 
 export default function AppLayout() {
     return (
         <Tabs
             screenOptions={{
-                tabBarActiveTintColor: '#2563EB',
-                tabBarInactiveTintColor: '#9CA3AF',
+                tabBarActiveTintColor: "#2563EB",
+                tabBarInactiveTintColor: "#9CA3AF",
                 tabBarStyle: {
-                    backgroundColor: 'white',
+                    backgroundColor: "white",
                     borderTopWidth: 1,
-                    borderTopColor: '#E5E7EB',
+                    borderTopColor: "#E5E7EB",
                 },
                 headerStyle: {
-                    backgroundColor: '#2563EB',
+                    backgroundColor: "#2563EB",
                 },
-                headerTintColor: 'white',
+                headerTintColor: "white",
                 headerTitleStyle: {
-                    fontWeight: 'bold',
+                    fontWeight: "bold",
                 },
             }}
         >
             <Tabs.Screen
                 name="index"
                 options={{
-                    title: 'Dashboard',
+                    title: "Dashboard",
                     tabBarIcon: ({ color, size }) => (
                         <Home size={size} color={color} />
                     ),
@@ -34,7 +34,7 @@ export default function AppLayout() {
             <Tabs.Screen
                 name="clients"
                 options={{
-                    title: 'Clients',
+                    title: "Clients",
                     headerShown: false,
                     tabBarIcon: ({ color, size }) => (
                         <Users size={size} color={color} />
@@ -44,7 +44,7 @@ export default function AppLayout() {
             <Tabs.Screen
                 name="estimates"
                 options={{
-                    title: 'Estimates',
+                    title: "Estimates",
                     headerShown: false,
                     tabBarIcon: ({ color, size }) => (
                         <FileText size={size} color={color} />
@@ -54,7 +54,7 @@ export default function AppLayout() {
             <Tabs.Screen
                 name="settings"
                 options={{
-                    title: 'Settings',
+                    title: "Settings",
                     tabBarIcon: ({ color, size }) => (
                         <Settings size={size} color={color} />
                     ),
