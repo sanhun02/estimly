@@ -254,6 +254,16 @@ export default function EstimateDetailScreen() {
                                 ? formatDate(estimate.created_at)
                                 : "Unknown"}
                         </Text>
+                        {estimate.accepted_at && (
+                            <Text className="text-sm text-green-600 font-semibold mt-2">
+                                ✓ Accepted {formatDate(estimate.accepted_at)}
+                            </Text>
+                        )}
+                        {estimate.signature && (
+                            <Text className="text-sm text-gray-600 mt-1">
+                                Signed by: {estimate.signature}
+                            </Text>
+                        )}
                     </View>
 
                     {/* Client Info */}
