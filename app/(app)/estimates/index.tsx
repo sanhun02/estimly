@@ -14,6 +14,8 @@ import { useStore } from "@/store";
 import { Estimate } from "@/lib/types";
 import React from "react";
 
+type FilterStatus = "all" | "draft" | "sent" | "accepted";
+
 const STATUS_COLORS = {
     draft: "bg-gray-100 text-gray-700",
     sent: "bg-blue-100 text-blue-700",
@@ -27,6 +29,7 @@ export default function EstimatesScreen() {
     const { company, estimates, setEstimates } = useStore();
     const [loading, setLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
+    const [activeFilter, setActiveFilter] = useState<FilterStatus>("all");
 
     useEffect(() => {
         loadEstimates();
@@ -70,6 +73,58 @@ export default function EstimatesScreen() {
             style: "currency",
             currency: "USD",
         }).format(amount);
+    };
+
+    // filter estimates based on active filter
+    const filteredEstimates = estimates.filter((estimate) => {
+        if (activeFilter === "all") return true;
+        return estimate.status === activeFilter;
+    });
+
+    // get counts for each status
+    const statusCounts = {
+        all: estimates.length,
+        draft: estimates.filter((e) => e.status === "draft").length,
+        sent: estimates.filter((e) => e.status === "sent").length,
+        accepted: estimates.filter((e) => e.status === "accepted").length,
+    };
+
+    const renderFilterButton = (filter: FilterStatus, label: string) => {
+        const isActive = activeFilter === filter;
+        const count = statusCounts[filter];
+
+        return (
+            <Pressable
+                key={filter}
+                className={`px-4 py-2 rounded-full mr-2 ${
+                    isActive ? "bg-blue-600" : "bg-gray-100"
+                }`}
+                onPress={() => setActiveFilter(filter)}
+            >
+                <View className="flex-row items-center">
+                    <Text
+                        className={`font-semibold ${
+                            isActive ? "text-white" : "text-gray-700"
+                        }`}
+                    >
+                        {label}
+                    </Text>
+                    <View
+                        className={`ml-2 px-2 py-0.5 rounded-full ${
+                            isActive ? "bg-blue-500" : "bg-gray-200"
+                        }`}
+                    >
+                        <Text
+                            className={`text-xs font-bold ${
+                                isActive ? "text-white" : "text-gray-600"
+                            }`}
+                        >
+                            {count}
+                        </Text>
+                    </View>
+                </View>
+            </Pressable>
+        );
     };
 
     const renderEstimate = ({ item }: { item: Estimate }) => {
@@ -148,19 +203,43 @@ export default function EstimatesScreen() {
                 }}
             />
 
-            {estimates.length === 0 ? (
+            {/* Filter Buttons */}
+            <View className="bg-white border-b border-gray-200 px-4 py-3">
+                <View className="flex-row">
+                    {renderFilterButton("all", "All")}
+                    {renderFilterButton("draft", "Draft")}
+                    {renderFilterButton("sent", "Sent")}
+                    {renderFilterButton("accepted", "Accepted")}
+                </View>
+            </View>
+
+            {filteredEstimates.length === 0 ? (
                 <View className="flex-1 justify-center items-center px-6">
                     <FileText size={64} color="#D1D5DB" />
                     <Text className="text-xl font-semibold text-gray-900 mt-4 mb-2">
-                        No estimates yet
+                        {activeFilter === "all"
+                            ? "No estimates yet"
+                            : `No ${activeFilter} estimates`}
                     </Text>
-                    <Text className="text-sm text-gray-600 text-center">
-                        Tap the + button to create your first estimate
+                    <Text className="text-sm text-gray-600 text-center mb-4">
+                        {activeFilter === "all"
+                            ? "Tap the + button to create your first estimate"
+                            : `Try selecting a different filter`}
                     </Text>
+                    {activeFilter === "all" && (
+                        <Pressable
+                            className="bg-blue-600 rounded-lg px-6 py-3"
+                            onPress={() => router.push("/estimates/new")}
+                        >
+                            <Text className="text-white font-semibold">
+                                Create Estimate
+                            </Text>
+                        </Pressable>
+                    )}
                 </View>
             ) : (
                 <FlatList
-                    data={estimates}
+                    data={filteredEstimates}
                     renderItem={renderEstimate}
                     keyExtractor={(item) => item.id}
                     contentContainerClassName="p-4"
