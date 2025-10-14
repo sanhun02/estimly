@@ -84,22 +84,18 @@ serve(async (req) => {
       </div>
 
       <a href="${publicUrl}" 
-         target="_blank"
-         rel="noopener noreferrer"
-         style="display: inline-block; background: #2563eb; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: 600;">
+        target="_blank"
+        rel="noopener noreferrer"
+        style="display: inline-block; background: #2563eb; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: 600;">
         View & Accept Estimate
-      </a>
+        </a>
 
-      ${
-          estimate.pdf_url
-              ? `
         <p style="margin-top: 20px;">
-          <a href="${estimate.pdf_url}" target="_blank" style="color: #2563eb;">Download PDF</a>
+        <a href="${publicUrl}" target="_blank" style="color: #2563eb; text-decoration: underline;">
+            View Estimate Online
+        </a>
         </p>
-      `
-              : ""
-      }
-
+        
       <p style="margin-top: 30px; color: #6b7280; font-size: 14px;">
         If the button doesn't work, copy and paste this link into your browser:<br>
         <a href="${publicUrl}" style="color: #2563eb;">${publicUrl}</a>

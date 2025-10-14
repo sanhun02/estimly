@@ -13,6 +13,7 @@ import { supabase } from "@/lib/supabase";
 import { useStore } from "@/store";
 import { Estimate } from "@/lib/types";
 import React from "react";
+import EmptyState from "@/components/EmptyState";
 
 type FilterStatus = "all" | "draft" | "sent" | "accepted";
 
@@ -214,29 +215,30 @@ export default function EstimatesScreen() {
             </View>
 
             {filteredEstimates.length === 0 ? (
-                <View className="flex-1 justify-center items-center px-6">
-                    <FileText size={64} color="#D1D5DB" />
-                    <Text className="text-xl font-semibold text-gray-900 mt-4 mb-2">
-                        {activeFilter === "all"
+                <EmptyState
+                    icon={FileText}
+                    title={
+                        activeFilter === "all"
                             ? "No estimates yet"
-                            : `No ${activeFilter} estimates`}
-                    </Text>
-                    <Text className="text-sm text-gray-600 text-center mb-4">
-                        {activeFilter === "all"
-                            ? "Tap the + button to create your first estimate"
-                            : `Try selecting a different filter`}
-                    </Text>
-                    {activeFilter === "all" && (
-                        <Pressable
-                            className="bg-blue-600 rounded-lg px-6 py-3"
-                            onPress={() => router.push("/estimates/new")}
-                        >
-                            <Text className="text-white font-semibold">
-                                Create Estimate
-                            </Text>
-                        </Pressable>
-                    )}
-                </View>
+                            : `No ${activeFilter} estimates`
+                    }
+                    description={
+                        activeFilter === "all"
+                            ? "Start creating professional estimates and send them to your clients in minutes"
+                            : `You don't have any ${activeFilter} estimates. Try selecting a different filter.`
+                    }
+                    buttonText={
+                        activeFilter === "all"
+                            ? "Create Your First Estimate"
+                            : undefined
+                    }
+                    buttonIcon={activeFilter === "all" ? Plus : undefined}
+                    onButtonPress={
+                        activeFilter === "all"
+                            ? () => router.push("/estimates/new")
+                            : undefined
+                    }
+                />
             ) : (
                 <FlatList
                     data={filteredEstimates}

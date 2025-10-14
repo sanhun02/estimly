@@ -16,11 +16,13 @@ import {
     TrendingUp,
     AlertCircle,
     ChevronRight,
+    Plus,
 } from "lucide-react-native";
 import { supabase } from "@/lib/supabase";
 import { useStore } from "@/store";
 import { Estimate } from "@/lib/types";
 import React from "react";
+import EmptyState from "@/components/EmptyState";
 
 interface DashboardStats {
     totalEstimates: number;
@@ -295,22 +297,16 @@ export default function Dashboard() {
                     </View>
 
                     {recentEstimates.length === 0 ? (
-                        <View className="py-8 items-center">
-                            <FileText size={48} color="#D1D5DB" />
-                            <Text className="text-gray-500 mt-2">
-                                No estimates yet
-                            </Text>
-                            <Pressable
-                                className="mt-4 bg-blue-600 rounded-lg px-6 py-3"
-                                onPress={() =>
-                                    router.push("/(app)/estimates/new")
-                                }
-                            >
-                                <Text className="text-white font-semibold">
-                                    Create First Estimate
-                                </Text>
-                            </Pressable>
-                        </View>
+                        <EmptyState
+                            icon={FileText}
+                            title="Ready to get started?"
+                            description="Create your first estimate and start winning more business"
+                            buttonText="Create First Estimate"
+                            buttonIcon={Plus}
+                            onButtonPress={() =>
+                                router.push("/(app)/estimates/new")
+                            }
+                        />
                     ) : (
                         recentEstimates.map((estimate, index) => (
                             <Pressable

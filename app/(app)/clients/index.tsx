@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState } from "react";
 import {
     View,
     Text,
@@ -6,19 +6,22 @@ import {
     Pressable,
     ActivityIndicator,
     RefreshControl,
-} from 'react-native';
-import { Stack, useRouter } from 'expo-router';
-import { Plus, User, Mail, Phone } from 'lucide-react-native';
-import { supabase } from '@/lib/supabase';
-import { useStore } from '@/store';
-import { Client } from '@/lib/types';
-import React from 'react';
+    TextInput,
+} from "react-native";
+import { Stack, useRouter } from "expo-router";
+import { Plus, User, Mail, Phone, Search, X } from "lucide-react-native";
+import { supabase } from "@/lib/supabase";
+import { useStore } from "@/store";
+import { Client } from "@/lib/types";
+import React from "react";
+import EmptyState from "@/components/EmptyState";
 
 export default function ClientsListScreen() {
     const router = useRouter();
     const { company, clients, setClients } = useStore();
     const [loading, setLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
+    const [searchQuery, setSearchQuery] = useState("");
 
     useEffect(() => {
         loadClients();
@@ -29,10 +32,10 @@ export default function ClientsListScreen() {
 
         try {
             const { data, error } = await supabase
-                .from('clients')
-                .select('*')
-                .eq('company_id', company.id)
-                .order('created_at', { ascending: false });
+                .from("clients")
+                .select("*")
+                .eq("company_id", company.id)
+                .order("created_at", { ascending: false });
 
             if (error) throw error;
             setClients(data || []);
@@ -47,6 +50,26 @@ export default function ClientsListScreen() {
     const onRefresh = () => {
         setRefreshing(true);
         loadClients();
+    };
+
+    // filter clients based on search query
+    const filteredClients = clients.filter((client) => {
+        if (!searchQuery.trim()) return true;
+
+        const query = searchQuery.toLowerCase();
+        const name = client.name?.toLowerCase() || "";
+        const email = client.email?.toLowerCase() || "";
+        const phone = client.phone?.toLowerCase() || "";
+
+        return (
+            name.includes(query) ||
+            email.includes(query) ||
+            phone.includes(query)
+        );
+    });
+
+    const clearSearch = () => {
+        setSearchQuery("");
     };
 
     const renderClient = ({ item }: { item: Client }) => (
@@ -95,12 +118,12 @@ export default function ClientsListScreen() {
         <View className="flex-1 bg-gray-50">
             <Stack.Screen
                 options={{
-                    title: 'Clients',
-                    headerStyle: { backgroundColor: '#2563EB' },
-                    headerTintColor: 'white',
+                    title: "Clients",
+                    headerStyle: { backgroundColor: "#2563EB" },
+                    headerTintColor: "white",
                     headerRight: () => (
                         <Pressable
-                            onPress={() => router.push('/clients/new')}
+                            onPress={() => router.push("/clients/new")}
                             className="mr-4"
                         >
                             <Plus size={24} color="white" />
@@ -109,19 +132,55 @@ export default function ClientsListScreen() {
                 }}
             />
 
-            {clients.length === 0 ? (
-                <View className="flex-1 justify-center items-center px-6">
-                    <User size={64} color="#D1D5DB" />
-                    <Text className="text-xl font-semibold text-gray-900 mt-4 mb-2">
-                        No clients yet
-                    </Text>
-                    <Text className="text-sm text-gray-600 text-center">
-                        Tap the + button to add your first client
-                    </Text>
+            {/* Search Bar */}
+            <View className="bg-white border-b border-gray-200 px-4 py-3">
+                <View className="flex-row items-center bg-gray-100 rounded-lg px-3 py-2">
+                    <Search size={20} color="#6B7280" />
+                    <TextInput
+                        className="flex-1 ml-2 text-base text-gray-900"
+                        placeholder="Search clients by name, email, or phone"
+                        placeholderTextColor="#9CA3AF"
+                        value={searchQuery}
+                        onChangeText={setSearchQuery}
+                        autoCapitalize="none"
+                        autoCorrect={false}
+                    />
+                    {searchQuery.length > 0 && (
+                        <Pressable onPress={clearSearch} className="ml-2">
+                            <X size={20} color="#6B7280" />
+                        </Pressable>
+                    )}
                 </View>
+                {searchQuery.length > 0 && (
+                    <Text className="text-sm text-gray-600 mt-2">
+                        {filteredClients.length}{" "}
+                        {filteredClients.length === 1 ? "client" : "clients"}{" "}
+                        found
+                    </Text>
+                )}
+            </View>
+
+            {clients.length === 0 ? (
+                <EmptyState
+                    icon={User}
+                    title="Add your first client"
+                    description="Keep track of your clients and quickly create estimates for them"
+                    buttonText="Add First Client"
+                    buttonIcon={Plus}
+                    onButtonPress={() => router.push("/clients/new")}
+                />
+            ) : filteredClients.length === 0 ? (
+                <EmptyState
+                    icon={Search}
+                    iconColor="#9CA3AF"
+                    title="No clients found"
+                    description={`We couldn't find any clients matching "${searchQuery}"`}
+                    buttonText="Clear Search"
+                    onButtonPress={clearSearch}
+                />
             ) : (
                 <FlatList
-                    data={clients}
+                    data={filteredClients}
                     renderItem={renderClient}
                     keyExtractor={(item) => item.id}
                     contentContainerClassName="p-4"
@@ -136,7 +195,7 @@ export default function ClientsListScreen() {
 
             <Pressable
                 className="absolute right-5 bottom-5 w-14 h-14 rounded-full bg-blue-600 items-center justify-center shadow-lg active:opacity-80"
-                onPress={() => router.push('/clients/new')}
+                onPress={() => router.push("/clients/new")}
             >
                 <Plus size={28} color="white" />
             </Pressable>
