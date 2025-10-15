@@ -4,19 +4,19 @@
         "slug": "estimly",
         "version": "1.0.0",
         "orientation": "portrait",
-        "icon": null,
+        "icon": "./assets/icon.png",
         "userInterfaceStyle": "light",
         "newArchEnabled": true,
         "splash": {
-            "image": null,
             "resizeMode": "contain",
-            "backgroundColor": "#ffffff"
+            "backgroundColor": "#2563EB"
         },
         "assetBundlePatterns": ["**/*"],
         "ios": {
-            "supportsTablet": true
+            "supportsTablet": true,
+            "bundleIdentifier": "com.hunter.estimly"
         },
-        "android": {},
+        "android": { "package": "com.hunter.estimly" },
         "web": {
             "bundler": "metro"
         },
