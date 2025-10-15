@@ -5,7 +5,6 @@ import {
     ScrollView,
     RefreshControl,
     Pressable,
-    ActivityIndicator,
 } from "react-native";
 import { useRouter } from "expo-router";
 import {
@@ -24,6 +23,8 @@ import { Estimate } from "@/lib/supabase/types";
 import React from "react";
 import EmptyState from "@/components/EmptyState";
 import { showToast } from "@/lib/toast";
+import { Skeleton } from "@/components/Skeleton";
+import { handleError } from "@/lib/errorHandler";
 
 interface DashboardStats {
     totalEstimates: number;
@@ -34,6 +35,36 @@ interface DashboardStats {
     pendingRevenue: number;
     unpaidDeposits: number;
     thisMonthAccepted: number;
+}
+
+function MetricCardSkeleton() {
+    return (
+        <View className="bg-white rounded-xl p-4 shadow-sm border border-gray-200">
+            <Skeleton
+                height={24}
+                width={24}
+                className="mb-2"
+                borderRadius={12}
+            />
+            <Skeleton height={32} width="70%" className="mb-1" />
+            <Skeleton height={12} width="50%" />
+        </View>
+    );
+}
+
+function EstimateItemSkeleton() {
+    return (
+        <View className="flex-row items-center justify-between py-3 border-b border-gray-100">
+            <View className="flex-1">
+                <View className="flex-row items-center mb-1">
+                    <Skeleton height={16} width={100} className="mr-2" />
+                    <Skeleton height={20} width={60} borderRadius={12} />
+                </View>
+                <Skeleton height={14} width={80} />
+            </View>
+            <Skeleton height={20} width={80} />
+        </View>
+    );
 }
 
 export default function Dashboard() {
@@ -112,7 +143,10 @@ export default function Dashboard() {
 
             setStats(calculatedStats);
         } catch (error: any) {
-            showToast.error("Failed to load dashboard", error.message);
+            handleError(error, {
+                operation: "load dashboard",
+                fallbackMessage: "Unable to load dashboard data",
+            });
         } finally {
             setLoading(false);
             setRefreshing(false);
@@ -140,13 +174,13 @@ export default function Dashboard() {
         });
     };
 
-    if (loading) {
-        return (
-            <View className="flex-1 justify-center items-center bg-gray-50">
-                <ActivityIndicator size="large" color="#2563EB" />
-            </View>
-        );
-    }
+    // if (loading) {
+    //     return (
+    //         <View className="flex-1 justify-center items-center bg-gray-50">
+    //             <ActivityIndicator size="large" color="#2563EB" />
+    //         </View>
+    //     );
+    // }
 
     return (
         <ScrollView
@@ -158,126 +192,170 @@ export default function Dashboard() {
             <View className="p-4">
                 {/* Header */}
                 <View className="mb-6">
-                    <Text className="text-2xl font-bold text-gray-900 mb-1">
-                        Welcome back!
-                    </Text>
-                    <Text className="text-gray-600">
-                        {company?.name || user?.email}
-                    </Text>
+                    {loading ? (
+                        <>
+                            <Skeleton
+                                height={32}
+                                width="60%"
+                                className="mb-2"
+                            />
+                            <Skeleton height={20} width="40%" />
+                        </>
+                    ) : (
+                        <>
+                            <Text className="text-2xl font-bold text-gray-900 mb-1">
+                                Welcome back!
+                            </Text>
+                            <Text className="text-gray-600">
+                                {company?.name || user?.email}
+                            </Text>
+                        </>
+                    )}
                 </View>
 
                 {/* Summary Cards Grid */}
-                <View className="flex-row flex-wrap -mx-2 mb-4">
-                    {/* Total Revenue */}
-                    <View className="w-1/2 px-2 mb-4">
-                        <View className="bg-gradient-to-br from-green-500 to-green-600 rounded-xl p-4 shadow-sm">
-                            <View className="flex-row items-center justify-between mb-2">
-                                <DollarSign size={24} color="white" />
-                                <Text className="text-green-100 text-xs font-semibold">
-                                    ALL TIME
-                                </Text>
-                            </View>
-                            <Text className="text-white text-2xl font-bold mb-1">
-                                {formatCurrency(stats.totalRevenue)}
-                            </Text>
-                            <Text className="text-green-100 text-xs">
-                                Total Revenue
-                            </Text>
+                {loading ? (
+                    <View className="flex-row flex-wrap -mx-2 mb-4">
+                        <View className="w-1/2 px-2 mb-4">
+                            <MetricCardSkeleton />
+                        </View>
+                        <View className="w-1/2 px-2 mb-4">
+                            <MetricCardSkeleton />
+                        </View>
+                        <View className="w-1/2 px-2 mb-4">
+                            <MetricCardSkeleton />
+                        </View>
+                        <View className="w-1/2 px-2 mb-4">
+                            <MetricCardSkeleton />
                         </View>
                     </View>
+                ) : (
+                    <View className="flex-row flex-wrap -mx-2 mb-4">
+                        {/* Total Revenue */}
+                        <View className="w-1/2 px-2 mb-4">
+                            <View className="bg-gradient-to-br from-green-500 to-green-600 rounded-xl p-4 shadow-sm">
+                                <View className="flex-row items-center justify-between mb-2">
+                                    <DollarSign size={24} color="white" />
+                                    <Text className="text-green-100 text-xs font-semibold">
+                                        ALL TIME
+                                    </Text>
+                                </View>
+                                <Text className="text-white text-2xl font-bold mb-1">
+                                    {formatCurrency(stats.totalRevenue)}
+                                </Text>
+                                <Text className="text-green-100 text-xs">
+                                    Total Revenue
+                                </Text>
+                            </View>
+                        </View>
 
-                    {/* Pending Revenue */}
-                    <View className="w-1/2 px-2 mb-4">
-                        <View className="bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl p-4 shadow-sm">
-                            <View className="flex-row items-center justify-between mb-2">
-                                <Clock size={24} color="white" />
-                                <Text className="text-blue-100 text-xs font-semibold">
-                                    PENDING
+                        {/* Pending Revenue */}
+                        <View className="w-1/2 px-2 mb-4">
+                            <View className="bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl p-4 shadow-sm">
+                                <View className="flex-row items-center justify-between mb-2">
+                                    <Clock size={24} color="white" />
+                                    <Text className="text-blue-100 text-xs font-semibold">
+                                        PENDING
+                                    </Text>
+                                </View>
+                                <Text className="text-white text-2xl font-bold mb-1">
+                                    {formatCurrency(stats.pendingRevenue)}
+                                </Text>
+                                <Text className="text-blue-100 text-xs">
+                                    Awaiting Approval
                                 </Text>
                             </View>
-                            <Text className="text-white text-2xl font-bold mb-1">
-                                {formatCurrency(stats.pendingRevenue)}
-                            </Text>
-                            <Text className="text-blue-100 text-xs">
-                                Awaiting Approval
-                            </Text>
                         </View>
-                    </View>
 
-                    {/* Accepted This Month */}
-                    <View className="w-1/2 px-2 mb-4">
-                        <View className="bg-gradient-to-br from-purple-500 to-purple-600 rounded-xl p-4 shadow-sm">
-                            <View className="flex-row items-center justify-between mb-2">
-                                <CheckCircle size={24} color="white" />
-                                <Text className="text-purple-100 text-xs font-semibold">
-                                    THIS MONTH
+                        {/* Accepted This Month */}
+                        <View className="w-1/2 px-2 mb-4">
+                            <View className="bg-gradient-to-br from-purple-500 to-purple-600 rounded-xl p-4 shadow-sm">
+                                <View className="flex-row items-center justify-between mb-2">
+                                    <CheckCircle size={24} color="white" />
+                                    <Text className="text-purple-100 text-xs font-semibold">
+                                        THIS MONTH
+                                    </Text>
+                                </View>
+                                <Text className="text-white text-2xl font-bold mb-1">
+                                    {stats.thisMonthAccepted}
+                                </Text>
+                                <Text className="text-purple-100 text-xs">
+                                    Accepted
                                 </Text>
                             </View>
-                            <Text className="text-white text-2xl font-bold mb-1">
-                                {stats.thisMonthAccepted}
-                            </Text>
-                            <Text className="text-purple-100 text-xs">
-                                Accepted
-                            </Text>
                         </View>
-                    </View>
 
-                    {/* Unpaid Deposits */}
-                    <View className="w-1/2 px-2 mb-4">
-                        <View className="bg-gradient-to-br from-orange-500 to-orange-600 rounded-xl p-4 shadow-sm">
-                            <View className="flex-row items-center justify-between mb-2">
-                                <AlertCircle size={24} color="white" />
-                                <Text className="text-orange-100 text-xs font-semibold">
-                                    DEPOSITS
+                        {/* Unpaid Deposits */}
+                        <View className="w-1/2 px-2 mb-4">
+                            <View className="bg-gradient-to-br from-orange-500 to-orange-600 rounded-xl p-4 shadow-sm">
+                                <View className="flex-row items-center justify-between mb-2">
+                                    <AlertCircle size={24} color="white" />
+                                    <Text className="text-orange-100 text-xs font-semibold">
+                                        DEPOSITS
+                                    </Text>
+                                </View>
+                                <Text className="text-white text-2xl font-bold mb-1">
+                                    {formatCurrency(stats.unpaidDeposits)}
+                                </Text>
+                                <Text className="text-orange-100 text-xs">
+                                    Unpaid
                                 </Text>
                             </View>
-                            <Text className="text-white text-2xl font-bold mb-1">
-                                {formatCurrency(stats.unpaidDeposits)}
-                            </Text>
-                            <Text className="text-orange-100 text-xs">
-                                Unpaid
-                            </Text>
                         </View>
                     </View>
-                </View>
+                )}
 
                 {/* Quick Stats */}
-                <View className="bg-white rounded-xl p-4 mb-4 border border-gray-200">
-                    <View className="flex-row items-center mb-3">
-                        <TrendingUp size={20} color="#2563EB" />
-                        <Text className="text-lg font-bold text-gray-900 ml-2">
-                            Overview
-                        </Text>
+                {loading ? (
+                    <View className="bg-white rounded-xl p-4 mb-4 border border-gray-200">
+                        <Skeleton height={24} width="40%" className="mb-3" />
+                        <Skeleton height={16} width="100%" className="mb-3" />
+                        <Skeleton height={16} width="100%" className="mb-3" />
+                        <Skeleton height={16} width="100%" className="mb-3" />
+                        <Skeleton height={16} width="100%" />
                     </View>
+                ) : (
+                    <View className="bg-white rounded-xl p-4 mb-4 border border-gray-200">
+                        <View className="flex-row items-center mb-3">
+                            <TrendingUp size={20} color="#2563EB" />
+                            <Text className="text-lg font-bold text-gray-900 ml-2">
+                                Overview
+                            </Text>
+                        </View>
 
-                    <View className="flex-row justify-between items-center py-3 border-b border-gray-100">
-                        <Text className="text-gray-600">Total Estimates</Text>
-                        <Text className="text-gray-900 font-semibold">
-                            {stats.totalEstimates}
-                        </Text>
-                    </View>
+                        <View className="flex-row justify-between items-center py-3 border-b border-gray-100">
+                            <Text className="text-gray-600">
+                                Total Estimates
+                            </Text>
+                            <Text className="text-gray-900 font-semibold">
+                                {stats.totalEstimates}
+                            </Text>
+                        </View>
 
-                    <View className="flex-row justify-between items-center py-3 border-b border-gray-100">
-                        <Text className="text-gray-600">Drafts</Text>
-                        <Text className="text-gray-500 font-semibold">
-                            {stats.draftEstimates}
-                        </Text>
-                    </View>
+                        <View className="flex-row justify-between items-center py-3 border-b border-gray-100">
+                            <Text className="text-gray-600">Drafts</Text>
+                            <Text className="text-gray-500 font-semibold">
+                                {stats.draftEstimates}
+                            </Text>
+                        </View>
 
-                    <View className="flex-row justify-between items-center py-3 border-b border-gray-100">
-                        <Text className="text-gray-600">Sent & Pending</Text>
-                        <Text className="text-blue-600 font-semibold">
-                            {stats.sentEstimates}
-                        </Text>
-                    </View>
+                        <View className="flex-row justify-between items-center py-3 border-b border-gray-100">
+                            <Text className="text-gray-600">
+                                Sent & Pending
+                            </Text>
+                            <Text className="text-blue-600 font-semibold">
+                                {stats.sentEstimates}
+                            </Text>
+                        </View>
 
-                    <View className="flex-row justify-between items-center py-3">
-                        <Text className="text-gray-600">Accepted</Text>
-                        <Text className="text-green-600 font-semibold">
-                            {stats.acceptedEstimates}
-                        </Text>
+                        <View className="flex-row justify-between items-center py-3">
+                            <Text className="text-gray-600">Accepted</Text>
+                            <Text className="text-green-600 font-semibold">
+                                {stats.acceptedEstimates}
+                            </Text>
+                        </View>
                     </View>
-                </View>
+                )}
 
                 {/* Recent Estimates */}
                 <View className="bg-white rounded-xl p-4 border border-gray-200">
@@ -288,16 +366,26 @@ export default function Dashboard() {
                                 Recent Estimates
                             </Text>
                         </View>
-                        <Pressable
-                            onPress={() => router.push("/(app)/estimates")}
-                        >
-                            <Text className="text-blue-600 text-sm font-semibold">
-                                View All
-                            </Text>
-                        </Pressable>
+                        {!loading && (
+                            <Pressable
+                                onPress={() => router.push("/(app)/estimates")}
+                            >
+                                <Text className="text-blue-600 text-sm font-semibold">
+                                    View All
+                                </Text>
+                            </Pressable>
+                        )}
                     </View>
 
-                    {recentEstimates.length === 0 ? (
+                    {loading ? (
+                        <>
+                            <EstimateItemSkeleton />
+                            <EstimateItemSkeleton />
+                            <EstimateItemSkeleton />
+                            <EstimateItemSkeleton />
+                            <EstimateItemSkeleton />
+                        </>
+                    ) : recentEstimates.length === 0 ? (
                         <EmptyState
                             icon={FileText}
                             title="Ready to get started?"

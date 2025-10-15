@@ -5,6 +5,7 @@ import { supabase, supabaseAdmin } from "@/lib/supabase/supabase";
 import { useStore } from "@/store";
 import React from "react";
 import { showToast } from "@/lib/toast";
+import { handleError } from "@/lib/errorHandler";
 
 export default function CompanySetup() {
     const router = useRouter();
@@ -40,63 +41,35 @@ export default function CompanySetup() {
         setLoading(true);
 
         try {
-            // Debug: Check current auth status
-            const {
-                data: { session: currentSession },
-            } = await supabase.auth.getSession();
-            console.log("✅ Current session:", currentSession?.user?.email);
-            console.log("✅ Session role:", currentSession?.user?.role);
-
             // Step 1: Create company directly
-            console.log("📝 Creating company...");
             const { data: company, error: companyError } = await supabaseAdmin
                 .from("companies")
                 .insert({ name: name.trim() })
                 .select()
                 .single();
 
-            if (companyError) {
-                console.error("❌ Company creation error:", companyError);
-                throw companyError;
-            }
-
-            console.log("✅ Company created:", company.id);
+            if (companyError) throw companyError;
 
             // Step 2: Create/update user record with company_id
-            console.log("🔗 Linking user to company...");
             const { error: userError } = await supabase.from("users").upsert({
                 id: session.user.id,
                 email: session.user.email!,
                 company_id: company.id,
             });
 
-            if (userError) {
-                console.error("❌ User linking error:", userError);
-                throw userError;
-            }
-
-            console.log("✅ User linked successfully");
+            if (userError) throw userError;
 
             setCompany(company);
             showToast.success("Success!", "Company setup complete");
             router.replace("/(app)");
         } catch (error: any) {
-            console.error("❌ Setup error:", error);
-            showToast.error(
-                "Setup Failed",
-                error.message || "Please try again"
-            );
+            handleError(error, {
+                operation: "company setup",
+                fallbackMessage: "Unable to complete setup. Please try again.",
+            });
         } finally {
             setLoading(false);
         }
-    };
-
-    const handleSignOut = async () => {
-        await supabase.auth.signOut();
-        setSession(null);
-        setUser(null);
-        setCompany(null);
-        router.replace("/(auth)/login");
     };
 
     return (
@@ -126,16 +99,6 @@ export default function CompanySetup() {
             >
                 <Text className="text-white text-center font-semibold text-base">
                     {loading ? "Saving..." : "Continue"}
-                </Text>
-            </Pressable>
-
-            {/* Temporary sign out button */}
-            <Pressable
-                className="border border-gray-300 rounded-lg py-3"
-                onPress={handleSignOut}
-            >
-                <Text className="text-gray-600 text-center text-sm">
-                    Sign Out
                 </Text>
             </Pressable>
         </View>

@@ -4,6 +4,7 @@ import { useRouter } from "expo-router";
 import { supabase } from "@/lib/supabase/supabase";
 import React from "react";
 import { showToast } from "@/lib/toast";
+import { handleError } from "@/lib/errorHandler";
 
 export default function Signup() {
     const router = useRouter();
@@ -57,7 +58,10 @@ export default function Signup() {
                 }, 500);
             }
         } catch (error: any) {
-            showToast.error("Signup Failed", error.message);
+            handleError(error, {
+                operation: "signup",
+                fallbackMessage: "Unable to create account. Please try again.",
+            });
         } finally {
             setLoading(false);
         }

@@ -4,7 +4,6 @@ import {
     Text,
     FlatList,
     Pressable,
-    ActivityIndicator,
     RefreshControl,
     TextInput,
 } from "react-native";
@@ -16,6 +15,28 @@ import { Client } from "@/lib/supabase/types";
 import React from "react";
 import EmptyState from "@/components/EmptyState";
 import { showToast } from "@/lib/toast";
+import { Skeleton } from "@/components/Skeleton";
+import { handleError } from "@/lib/errorHandler";
+
+function ClientCardSkeleton() {
+    return (
+        <View className="bg-white rounded-xl p-4 mb-3 border border-gray-200">
+            <View className="flex-row items-center">
+                <Skeleton
+                    height={48}
+                    width={48}
+                    borderRadius={24}
+                    className="mr-3"
+                />
+                <View className="flex-1">
+                    <Skeleton height={20} width="60%" className="mb-2" />
+                    <Skeleton height={14} width="80%" className="mb-1" />
+                    <Skeleton height={14} width="70%" />
+                </View>
+            </View>
+        </View>
+    );
+}
 
 export default function ClientsListScreen() {
     const router = useRouter();
@@ -41,7 +62,10 @@ export default function ClientsListScreen() {
             if (error) throw error;
             setClients(data || []);
         } catch (error: any) {
-            showToast.error("Failed to load clients", error.message);
+            handleError(error, {
+                operation: "load clients",
+                fallbackMessage: "Unable to load your clients",
+            });
         } finally {
             setLoading(false);
             setRefreshing(false);
@@ -107,14 +131,6 @@ export default function ClientsListScreen() {
         </Pressable>
     );
 
-    if (loading) {
-        return (
-            <View className="flex-1 justify-center items-center">
-                <ActivityIndicator size="large" color="#2563EB" />
-            </View>
-        );
-    }
-
     return (
         <View className="flex-1 bg-gray-50">
             <Stack.Screen
@@ -134,34 +150,47 @@ export default function ClientsListScreen() {
             />
 
             {/* Search Bar */}
-            <View className="bg-white border-b border-gray-200 px-4 py-3">
-                <View className="flex-row items-center bg-gray-100 rounded-lg px-3 py-2">
-                    <Search size={20} color="#6B7280" />
-                    <TextInput
-                        className="flex-1 ml-2 text-base text-gray-900"
-                        placeholder="Search clients by name, email, or phone"
-                        placeholderTextColor="#9CA3AF"
-                        value={searchQuery}
-                        onChangeText={setSearchQuery}
-                        autoCapitalize="none"
-                        autoCorrect={false}
-                    />
+            {!loading && (
+                <View className="bg-white border-b border-gray-200 px-4 py-3">
+                    <View className="flex-row items-center bg-gray-100 rounded-lg px-3 py-2">
+                        <Search size={20} color="#6B7280" />
+                        <TextInput
+                            className="flex-1 ml-2 text-base text-gray-900"
+                            placeholder="Search clients by name, email, or phone"
+                            placeholderTextColor="#9CA3AF"
+                            value={searchQuery}
+                            onChangeText={setSearchQuery}
+                            autoCapitalize="none"
+                            autoCorrect={false}
+                        />
+                        {searchQuery.length > 0 && (
+                            <Pressable onPress={clearSearch} className="ml-2">
+                                <X size={20} color="#6B7280" />
+                            </Pressable>
+                        )}
+                    </View>
                     {searchQuery.length > 0 && (
-                        <Pressable onPress={clearSearch} className="ml-2">
-                            <X size={20} color="#6B7280" />
-                        </Pressable>
+                        <Text className="text-sm text-gray-600 mt-2">
+                            {filteredClients.length}{" "}
+                            {filteredClients.length === 1
+                                ? "client"
+                                : "clients"}{" "}
+                            found
+                        </Text>
                     )}
                 </View>
-                {searchQuery.length > 0 && (
-                    <Text className="text-sm text-gray-600 mt-2">
-                        {filteredClients.length}{" "}
-                        {filteredClients.length === 1 ? "client" : "clients"}{" "}
-                        found
-                    </Text>
-                )}
-            </View>
+            )}
 
-            {clients.length === 0 ? (
+            {loading ? (
+                <View className="p-4">
+                    <ClientCardSkeleton />
+                    <ClientCardSkeleton />
+                    <ClientCardSkeleton />
+                    <ClientCardSkeleton />
+                    <ClientCardSkeleton />
+                    <ClientCardSkeleton />
+                </View>
+            ) : clients.length === 0 ? (
                 <EmptyState
                     icon={User}
                     title="Add your first client"
@@ -194,12 +223,14 @@ export default function ClientsListScreen() {
                 />
             )}
 
-            <Pressable
-                className="absolute right-5 bottom-5 w-14 h-14 rounded-full bg-blue-600 items-center justify-center shadow-lg active:opacity-80"
-                onPress={() => router.push("/clients/new")}
-            >
-                <Plus size={28} color="white" />
-            </Pressable>
+            {!loading && (
+                <Pressable
+                    className="absolute right-5 bottom-5 w-14 h-14 rounded-full bg-blue-600 items-center justify-center shadow-lg active:opacity-80"
+                    onPress={() => router.push("/clients/new")}
+                >
+                    <Plus size={28} color="white" />
+                </Pressable>
+            )}
         </View>
     );
 }
