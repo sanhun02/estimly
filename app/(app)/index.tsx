@@ -18,11 +18,12 @@ import {
     ChevronRight,
     Plus,
 } from "lucide-react-native";
-import { supabase } from "@/lib/supabase";
+import { supabase } from "@/lib/supabase/supabase";
 import { useStore } from "@/store";
-import { Estimate } from "@/lib/types";
+import { Estimate } from "@/lib/supabase/types";
 import React from "react";
 import EmptyState from "@/components/EmptyState";
+import { showToast } from "@/lib/toast";
 
 interface DashboardStats {
     totalEstimates: number;
@@ -111,7 +112,7 @@ export default function Dashboard() {
 
             setStats(calculatedStats);
         } catch (error: any) {
-            alert(error.message);
+            showToast.error("Failed to load dashboard", error.message);
         } finally {
             setLoading(false);
             setRefreshing(false);

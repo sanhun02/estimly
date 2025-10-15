@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState } from "react";
 import {
     View,
     Text,
@@ -7,12 +7,13 @@ import {
     ScrollView,
     Alert,
     ActivityIndicator,
-} from 'react-native';
-import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
-import { Trash2, Save } from 'lucide-react-native';
-import { supabase } from '@/lib/supabase';
-import { useStore } from '@/store';
-import React from 'react';
+} from "react-native";
+import { Stack, useLocalSearchParams, useRouter } from "expo-router";
+import { Trash2, Save } from "lucide-react-native";
+import { supabase } from "@/lib/supabase/supabase";
+import { useStore } from "@/store";
+import React from "react";
+import { showToast } from "@/lib/toast";
 
 export default function ClientDetailScreen() {
     const params = useLocalSearchParams();
@@ -21,14 +22,14 @@ export default function ClientDetailScreen() {
 
     const id = Array.isArray(params.id) ? params.id[0] : params.id;
 
-    const [loading, setLoading] = useState(id !== 'new');
+    const [loading, setLoading] = useState(id !== "new");
     const [saving, setSaving] = useState(false);
-    const [name, setName] = useState('');
-    const [email, setEmail] = useState('');
-    const [phone, setPhone] = useState('');
-    const [address, setAddress] = useState('');
+    const [name, setName] = useState("");
+    const [email, setEmail] = useState("");
+    const [phone, setPhone] = useState("");
+    const [address, setAddress] = useState("");
 
-    const isNewClient = id === 'new';
+    const isNewClient = id === "new";
 
     useEffect(() => {
         if (!isNewClient) {
@@ -39,17 +40,17 @@ export default function ClientDetailScreen() {
     const loadClient = async () => {
         try {
             const { data, error } = await supabase
-                .from('clients')
-                .select('*')
-                .eq('id', id)
+                .from("clients")
+                .select("*")
+                .eq("id", id)
                 .single();
 
             if (error) throw error;
 
             setName(data.name);
-            setEmail(data.email || '');
-            setPhone(data.phone || '');
-            setAddress(data.address || '');
+            setEmail(data.email || "");
+            setPhone(data.phone || "");
+            setAddress(data.address || "");
         } catch (error: any) {
             alert(error.message);
             router.back();
@@ -60,7 +61,7 @@ export default function ClientDetailScreen() {
 
     const handleSave = async () => {
         if (!company || !name.trim()) {
-            alert('Please enter a client name');
+            alert("Please enter a client name");
             return;
         }
 
@@ -69,7 +70,7 @@ export default function ClientDetailScreen() {
         try {
             if (isNewClient) {
                 const { data, error } = await supabase
-                    .from('clients')
+                    .from("clients")
                     .insert({
                         company_id: company.id,
                         name: name.trim(),
@@ -82,26 +83,36 @@ export default function ClientDetailScreen() {
 
                 if (error) throw error;
                 addClient(data);
+                showToast.success(
+                    "Client Created",
+                    `${data.name} has been added`
+                );
+                router.back();
             } else {
                 const { data, error } = await supabase
-                    .from('clients')
+                    .from("clients")
                     .update({
                         name: name.trim(),
                         email: email.trim() || null,
                         phone: phone.trim() || null,
                         address: address.trim() || null,
                     })
-                    .eq('id', id)
+                    .eq("id", id)
                     .select()
                     .single();
 
                 if (error) throw error;
                 updateClient(id, data);
+                showToast.success(
+                    "Client Updated",
+                    "Changes saved successfully"
+                );
+                router.back();
             }
 
             router.back();
         } catch (error: any) {
-            alert(error.message);
+            showToast.error("Failed to save client", error.message);
         } finally {
             setSaving(false);
         }
@@ -109,25 +120,29 @@ export default function ClientDetailScreen() {
 
     const handleDelete = () => {
         Alert.alert(
-            'Delete Client',
-            'Are you sure you want to delete this client?',
+            "Delete Client",
+            "Are you sure you want to delete this client?",
             [
-                { text: 'Cancel', style: 'cancel' },
+                { text: "Cancel", style: "cancel" },
                 {
-                    text: 'Delete',
-                    style: 'destructive',
+                    text: "Delete",
+                    style: "destructive",
                     onPress: async () => {
                         try {
                             const { error } = await supabase
-                                .from('clients')
+                                .from("clients")
                                 .delete()
-                                .eq('id', id);
+                                .eq("id", id);
 
                             if (error) throw error;
                             deleteClient(id);
+                            showToast.success("Client Deleted");
                             router.back();
                         } catch (error: any) {
-                            alert(error.message);
+                            showToast.error(
+                                "Failed to delete client",
+                                error.message
+                            );
                         }
                     },
                 },
@@ -147,9 +162,9 @@ export default function ClientDetailScreen() {
         <View className="flex-1 bg-gray-50">
             <Stack.Screen
                 options={{
-                    title: isNewClient ? 'New Client' : 'Edit Client',
-                    headerStyle: { backgroundColor: '#2563EB' },
-                    headerTintColor: 'white',
+                    title: isNewClient ? "New Client" : "Edit Client",
+                    headerStyle: { backgroundColor: "#2563EB" },
+                    headerTintColor: "white",
                     headerRight: () =>
                         !isNewClient ? (
                             <Pressable onPress={handleDelete} className="mr-4">
@@ -225,7 +240,7 @@ export default function ClientDetailScreen() {
             <View className="p-4 bg-white border-t border-gray-200">
                 <Pressable
                     className={`bg-blue-600 rounded-lg py-4 flex-row items-center justify-center ${
-                        saving ? 'opacity-60' : 'active:opacity-80'
+                        saving ? "opacity-60" : "active:opacity-80"
                     }`}
                     onPress={handleSave}
                     disabled={saving}
@@ -236,7 +251,7 @@ export default function ClientDetailScreen() {
                         <>
                             <Save size={20} color="white" />
                             <Text className="text-white text-base font-semibold ml-2">
-                                {isNewClient ? 'Create Client' : 'Save Changes'}
+                                {isNewClient ? "Create Client" : "Save Changes"}
                             </Text>
                         </>
                     )}

@@ -9,10 +9,11 @@ import {
 } from "react-native";
 import { Stack, useLocalSearchParams, useRouter } from "expo-router";
 import { Trash2, Mail, FileText } from "lucide-react-native";
-import { supabase } from "@/lib/supabase";
+import { supabase } from "@/lib/supabase/supabase";
 import { useStore } from "@/store";
-import { Estimate, EstimateItem, Client } from "@/lib/types";
+import { Estimate, EstimateItem, Client } from "@/lib/supabase/types";
 import React from "react";
+import { showToast } from "@/lib/toast";
 
 export default function EstimateDetailScreen() {
     const params = useLocalSearchParams();
@@ -112,10 +113,10 @@ export default function EstimateDetailScreen() {
 
             if (error) throw error;
 
-            alert("PDF generated successfully!");
+            showToast.success("PDF Generated", "Estimate is ready to send");
             loadEstimate();
         } catch (error: any) {
-            alert(error.message);
+            showToast.error("Failed to generate PDF", error.message);
         } finally {
             setSending(false);
         }
@@ -155,10 +156,10 @@ export default function EstimateDetailScreen() {
                 throw result.error;
             }
 
-            alert(`Estimate sent to ${client.email}!`);
+            showToast.success("Estimate Sent!", `Sent to ${client.email}`);
             await loadEstimate();
         } catch (error: any) {
-            alert(error.message || "Failed to send estimate");
+            showToast.error("Failed to send estimate", error.message);
         } finally {
             setSending(false);
         }

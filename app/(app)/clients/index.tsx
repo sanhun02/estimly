@@ -10,11 +10,12 @@ import {
 } from "react-native";
 import { Stack, useRouter } from "expo-router";
 import { Plus, User, Mail, Phone, Search, X } from "lucide-react-native";
-import { supabase } from "@/lib/supabase";
+import { supabase } from "@/lib/supabase/supabase";
 import { useStore } from "@/store";
-import { Client } from "@/lib/types";
+import { Client } from "@/lib/supabase/types";
 import React from "react";
 import EmptyState from "@/components/EmptyState";
+import { showToast } from "@/lib/toast";
 
 export default function ClientsListScreen() {
     const router = useRouter();
@@ -40,7 +41,7 @@ export default function ClientsListScreen() {
             if (error) throw error;
             setClients(data || []);
         } catch (error: any) {
-            alert(error.message);
+            showToast.error("Failed to load clients", error.message);
         } finally {
             setLoading(false);
             setRefreshing(false);

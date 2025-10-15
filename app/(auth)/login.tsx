@@ -1,13 +1,14 @@
-import { useState } from 'react';
-import { View, TextInput, Pressable, Text } from 'react-native';
-import { useRouter } from 'expo-router';
-import { supabase } from '@/lib/supabase';
-import React from 'react';
+import { useState } from "react";
+import { View, TextInput, Pressable, Text } from "react-native";
+import { useRouter } from "expo-router";
+import { supabase } from "@/lib/supabase/supabase";
+import React from "react";
+import { showToast } from "@/lib/toast";
 
 export default function Login() {
     const router = useRouter();
-    const [email, setEmail] = useState('');
-    const [password, setPassword] = useState('');
+    const [email, setEmail] = useState("");
+    const [password, setPassword] = useState("");
     const [loading, setLoading] = useState(false);
 
     const handleLogin = async () => {
@@ -17,7 +18,9 @@ export default function Login() {
             password,
         });
 
-        if (error) alert(error.message);
+        if (error) {
+            showToast.error("Login Failed", error.message);
+        }
         setLoading(false);
     };
 
@@ -48,11 +51,11 @@ export default function Login() {
                 disabled={loading}
             >
                 <Text className="text-white text-center font-semibold text-base">
-                    {loading ? 'Loading...' : 'Sign In'}
+                    {loading ? "Loading..." : "Sign In"}
                 </Text>
             </Pressable>
 
-            <Pressable onPress={() => router.push('/(auth)/signup')}>
+            <Pressable onPress={() => router.push("/(auth)/signup")}>
                 <Text className="text-center text-blue-600 text-sm">
                     Don't have an account? Sign up
                 </Text>

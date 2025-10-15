@@ -9,16 +9,11 @@ import {
     ActivityIndicator,
 } from "react-native";
 import { useRouter } from "expo-router";
-import {
-    LogOut,
-    Save,
-    Building2,
-    Percent,
-    DollarSign,
-} from "lucide-react-native";
-import { supabase } from "@/lib/supabase";
+import { LogOut, Save, Building2, Percent } from "lucide-react-native";
+import { supabase } from "@/lib/supabase/supabase";
 import { useStore } from "@/store";
 import React from "react";
+import { showToast } from "@/lib/toast";
 
 export default function Settings() {
     const router = useRouter();
@@ -63,7 +58,7 @@ export default function Settings() {
                 setCompany(comp);
             }
         } catch (error: any) {
-            alert(error.message);
+            showToast.error("Failed to load settings", error.message);
         } finally {
             setLoading(false);
         }
@@ -73,7 +68,7 @@ export default function Settings() {
         if (!company) return;
 
         if (!name.trim()) {
-            alert("Company name is required");
+            showToast.error("Name Required", "Company name cannot be empty");
             return;
         }
 
@@ -97,9 +92,9 @@ export default function Settings() {
             if (error) throw error;
 
             setCompany(data);
-            alert("Settings saved succesfully!");
+            showToast.success("Settings Saved", "Your changes have been saved");
         } catch (error: any) {
-            alert(error.message);
+            showToast.error("Failed to save settings", error.message);
         } finally {
             setSaving(false);
         }

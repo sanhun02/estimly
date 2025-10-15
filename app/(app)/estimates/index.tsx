@@ -9,11 +9,12 @@ import {
 } from "react-native";
 import { Stack, useRouter } from "expo-router";
 import { Plus, FileText, DollarSign, Calendar } from "lucide-react-native";
-import { supabase } from "@/lib/supabase";
+import { supabase } from "@/lib/supabase/supabase";
 import { useStore } from "@/store";
-import { Estimate } from "@/lib/types";
+import { Estimate } from "@/lib/supabase/types";
 import React from "react";
 import EmptyState from "@/components/EmptyState";
+import { showToast } from "@/lib/toast";
 
 type FilterStatus = "all" | "draft" | "sent" | "accepted";
 
@@ -49,7 +50,7 @@ export default function EstimatesScreen() {
             if (error) throw error;
             setEstimates(data || []);
         } catch (error: any) {
-            alert(error.message);
+            showToast.error("Failed to load estimates", error.message);
         } finally {
             setLoading(false);
             setRefreshing(false);

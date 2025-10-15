@@ -9,9 +9,10 @@ import {
 } from "react-native";
 import { Stack, useRouter } from "expo-router";
 import { Plus, Trash2, Save } from "lucide-react-native";
-import { supabase } from "@/lib/supabase";
+import { supabase } from "@/lib/supabase/supabase";
 import { useStore } from "@/store";
 import React from "react";
+import { showToast } from "@/lib/toast";
 
 interface LineItem {
     id: string;
@@ -131,7 +132,7 @@ export default function NewEstimateScreen() {
         if (!company) return;
 
         if (!selectedClientId) {
-            alert("Please select a client");
+            showToast.error("Client Required", "Please select a client");
             return;
         }
 
@@ -143,7 +144,10 @@ export default function NewEstimateScreen() {
         );
 
         if (!hasValidItem) {
-            alert("Please add at least one item with a price or labor rate");
+            showToast.error(
+                "Invalid Items",
+                "Please add at least one item with a price or labor rate"
+            );
             return;
         }
 
@@ -197,9 +201,13 @@ export default function NewEstimateScreen() {
             if (itemsError) throw itemsError;
 
             addEstimate(estimate);
+            showToast.success(
+                "Estimate Created",
+                `#${estimate.estimate_number} saved as draft`
+            );
             router.back();
         } catch (error: any) {
-            alert(error.message);
+            showToast.error("Failed to create estimate", error.message);
         } finally {
             setLoading(false);
         }

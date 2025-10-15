@@ -1,6 +1,6 @@
 import { create } from "zustand";
 import { Session, User } from "@supabase/supabase-js";
-import { Company, Client, Estimate } from "@/lib/types";
+import { Company, Client, Estimate } from "@/lib/supabase/types";
 
 interface AppState {
     // auth
