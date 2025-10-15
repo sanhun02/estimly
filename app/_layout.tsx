@@ -7,6 +7,7 @@ import { useStore } from "@/store";
 import { View, ActivityIndicator } from "react-native";
 import React from "react";
 import Toast, { BaseToast, ErrorToast } from "react-native-toast-message";
+import OfflineBanner from "@/components/OfflineBanner";
 
 export default function RootLayout() {
     const router = useRouter();
@@ -116,6 +117,7 @@ export default function RootLayout() {
 
     return (
         <>
+            <OfflineBanner />
             <Slot />
             <Toast config={toastConfig} />
         </>
