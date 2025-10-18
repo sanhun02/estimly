@@ -1,5 +1,5 @@
 import { Tabs } from "expo-router";
-import { Users, FileText, Home, Settings } from "lucide-react-native";
+import { Users, FileText, Home, Settings, Package } from "lucide-react-native";
 import React from "react";
 
 export default function AppLayout() {
@@ -48,6 +48,15 @@ export default function AppLayout() {
                     headerShown: false,
                     tabBarIcon: ({ color, size }) => (
                         <FileText size={size} color={color} />
+                    ),
+                }}
+            />
+            <Tabs.Screen
+                name="templates"
+                options={{
+                    title: "Templates",
+                    tabBarIcon: ({ color, size }) => (
+                        <Package size={size} color={color} />
                     ),
                 }}
             />

@@ -11,9 +11,9 @@ import { Stack, useLocalSearchParams, useRouter } from "expo-router";
 import { Trash2, Mail, FileText } from "lucide-react-native";
 import { supabase } from "@/lib/supabase/supabase";
 import { useStore } from "@/store";
-import { Estimate, EstimateItem, Client } from "@/lib/supabase/types";
 import React from "react";
 import { showToast } from "@/lib/toast";
+import { Client, Estimate, EstimateItem } from "@/lib/supabase/types";
 
 export default function EstimateDetailScreen() {
     const params = useLocalSearchParams();

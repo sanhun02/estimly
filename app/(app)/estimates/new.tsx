@@ -8,11 +8,13 @@ import {
     ActivityIndicator,
 } from "react-native";
 import { Stack, useRouter } from "expo-router";
-import { Plus, Trash2, Save } from "lucide-react-native";
+import { Plus, Trash2, Save, Package } from "lucide-react-native";
 import { supabase } from "@/lib/supabase/supabase";
 import { useStore } from "@/store";
 import React from "react";
 import { showToast } from "@/lib/toast";
+import { handleError } from "@/lib/errorHandler";
+import { EstimateTemplateItem } from "@/lib/supabase/types";
 
 interface LineItem {
     id: string;
@@ -26,11 +28,19 @@ interface LineItem {
 
 export default function NewEstimateScreen() {
     const router = useRouter();
-    const { company, clients, setClients, addEstimate } = useStore();
+    const {
+        company,
+        clients,
+        templates,
+        setClients,
+        setTemplates,
+        addEstimate,
+    } = useStore();
 
     const [loading, setLoading] = useState(false);
     const [selectedClientId, setSelectedClientId] = useState<string>("");
     const [showClientPicker, setShowClientPicker] = useState(false);
+    const [showTemplates, setShowTemplates] = useState(false);
     const [items, setItems] = useState<LineItem[]>([
         {
             id: "1",
@@ -50,6 +60,7 @@ export default function NewEstimateScreen() {
 
     useEffect(() => {
         loadClients();
+        loadTemplates();
     }, []);
 
     const loadClients = async () => {
@@ -65,6 +76,61 @@ export default function NewEstimateScreen() {
             alert(error.message);
         } else {
             setClients(data || []);
+        }
+    };
+
+    const loadTemplates = async () => {
+        if (!company) return;
+
+        try {
+            const { data, error } = await supabase
+                .from("estimate_templates")
+                .select("*")
+                .eq("company_id", company.id)
+                .order("name");
+
+            if (error) throw error;
+            setTemplates(data || []);
+        } catch (error: any) {
+            console.error("Failed to load templates:", error);
+        }
+    };
+
+    const applyTemplate = async (templateId: string) => {
+        try {
+            const { data: templateItems, error } = await supabase
+                .from("estimate_template_items")
+                .select("*")
+                .eq("template_id", templateId)
+                .order("sort_order");
+
+            if (error) throw error;
+
+            if (templateItems && templateItems.length > 0) {
+                const newItems = templateItems.map(
+                    (item: EstimateTemplateItem) => ({
+                        id: Date.now().toString() + Math.random(),
+                        description: item.description,
+                        quantity: (item.quantity ?? 1).toString(),
+                        unit_price: (item.unit_price ?? 0).toString(),
+                        labor_hours: (item.labor_hours ?? 0).toString(),
+                        labor_rate: (item.labor_rate ?? 0).toString(),
+                        taxable: item.taxable ?? true,
+                    })
+                );
+
+                setItems(newItems);
+                setShowTemplates(false);
+                showToast.success(
+                    "Template Applied",
+                    "Line items loaded from template"
+                );
+            }
+        } catch (error: any) {
+            handleError(error, {
+                operation: "apply template",
+                fallbackMessage: "Unable to apply template",
+            });
         }
     };
 
@@ -282,6 +348,57 @@ export default function NewEstimateScreen() {
                             </View>
                         )}
                     </View>
+
+                    {/* Template Selector */}
+                    {templates.length > 0 && (
+                        <View className="bg-white rounded-xl p-4 mb-6 border border-gray-200">
+                            <View className="flex-row items-center justify-between mb-3">
+                                <View className="flex-row items-center">
+                                    <Package size={20} color="#2563EB" />
+                                    <Text className="text-base font-bold text-gray-900 ml-2">
+                                        Use Template
+                                    </Text>
+                                </View>
+                                <Pressable
+                                    onPress={() =>
+                                        setShowTemplates(!showTemplates)
+                                    }
+                                    className="bg-blue-100 rounded-lg px-3 py-1.5 active:opacity-80"
+                                >
+                                    <Text className="text-blue-700 font-semibold text-sm">
+                                        {showTemplates ? "Hide" : "Show"}
+                                    </Text>
+                                </Pressable>
+                            </View>
+
+                            {showTemplates && (
+                                <View>
+                                    <Text className="text-sm text-gray-600 mb-3">
+                                        Select a template to load pre-configured
+                                        line items:
+                                    </Text>
+                                    {templates.map((template) => (
+                                        <Pressable
+                                            key={template.id}
+                                            onPress={() =>
+                                                applyTemplate(template.id)
+                                            }
+                                            className="border border-gray-200 rounded-lg p-3 mb-2 active:bg-gray-50"
+                                        >
+                                            <Text className="font-semibold text-gray-900">
+                                                {template.name}
+                                            </Text>
+                                            {template.description && (
+                                                <Text className="text-sm text-gray-600 mt-1">
+                                                    {template.description}
+                                                </Text>
+                                            )}
+                                        </Pressable>
+                                    ))}
+                                </View>
+                            )}
+                        </View>
+                    )}
 
                     {/* Line Items */}
                     <View className="mb-6">
