@@ -1,6 +1,12 @@
 import { create } from "zustand";
 import { Session, User } from "@supabase/supabase-js";
-import { Company, Client, Estimate } from "@/lib/supabase/types";
+import {
+    Company,
+    Client,
+    Estimate,
+    EstimateTemplate,
+    EstimateItem,
+} from "@/lib/supabase/types";
 
 interface AppState {
     // auth
@@ -11,6 +17,7 @@ interface AppState {
     // data
     clients: Client[];
     estimates: Estimate[];
+    templates: EstimateTemplate[];
 
     // actions
     setSession: (session: Session | null) => void;
@@ -18,6 +25,7 @@ interface AppState {
     setCompany: (company: Company | null) => void;
     setClients: (clients: Client[]) => void;
     setEstimates: (estimates: Estimate[]) => void;
+    setTemplates: (templates: EstimateTemplate[]) => void;
 
     // helpers
     addClient: (client: Client) => void;
@@ -27,6 +35,10 @@ interface AppState {
     addEstimate: (estimate: Estimate) => void;
     updateEstimate: (id: string, updates: Partial<Estimate>) => void;
     deleteEstimate: (id: string) => void;
+
+    addTemplate: (template: EstimateTemplate) => void;
+    updateTemplate: (id: string, templates: Partial<EstimateTemplate>) => void;
+    deleteTemplate: (id: string) => void;
 
     reset: () => void;
 }
@@ -38,6 +50,7 @@ export const useStore = create<AppState>((set) => ({
     company: null,
     clients: [],
     estimates: [],
+    templates: [],
 
     // setters
     setSession: (session) => set({ session }),
@@ -45,6 +58,7 @@ export const useStore = create<AppState>((set) => ({
     setCompany: (company) => set({ company }),
     setClients: (clients) => set({ clients }),
     setEstimates: (estimates) => set({ estimates }),
+    setTemplates: (templates) => set({ templates }),
 
     // helpers
     addClient: (client) =>
@@ -81,6 +95,23 @@ export const useStore = create<AppState>((set) => ({
             estimates: state.estimates.filter((e) => e.id !== id),
         })),
 
+    addTemplate: (template) =>
+        set((state) => ({
+            templates: [...state.templates, template],
+        })),
+
+    updateTemplate: (id, updates) =>
+        set((state) => ({
+            templates: state.templates.map((t) =>
+                t.id === id ? { ...t, ...updates } : t
+            ),
+        })),
+
+    deleteTemplate: (id) =>
+        set((state) => ({
+            templates: state.templates.filter((t) => t.id !== id),
+        })),
+
     reset: () =>
         set({
             session: null,
@@ -88,5 +119,6 @@ export const useStore = create<AppState>((set) => ({
             company: null,
             clients: [],
             estimates: [],
+            templates: [],
         }),
 }));
