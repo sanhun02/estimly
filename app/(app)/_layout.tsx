@@ -32,7 +32,7 @@ export default function AppLayout() {
                 }}
             />
             <Tabs.Screen
-                name="clients"
+                name="clients/index"
                 options={{
                     title: "Clients",
                     headerShown: false,
@@ -42,7 +42,7 @@ export default function AppLayout() {
                 }}
             />
             <Tabs.Screen
-                name="estimates"
+                name="estimates/index"
                 options={{
                     title: "Estimates",
                     headerShown: false,
@@ -52,7 +52,7 @@ export default function AppLayout() {
                 }}
             />
             <Tabs.Screen
-                name="templates"
+                name="templates/index"
                 options={{
                     title: "Templates",
                     tabBarIcon: ({ color, size }) => (
@@ -67,6 +67,44 @@ export default function AppLayout() {
                     tabBarIcon: ({ color, size }) => (
                         <Settings size={size} color={color} />
                     ),
+                }}
+            />
+
+            {/* hide these routes from tabs */}
+            <Tabs.Screen
+                name="clients/[id]"
+                options={{
+                    href: null,
+                }}
+            />
+            <Tabs.Screen
+                name="clients/new"
+                options={{
+                    href: null,
+                }}
+            />
+            <Tabs.Screen
+                name="estimates/[id]"
+                options={{
+                    href: null,
+                }}
+            />
+            <Tabs.Screen
+                name="estimates/new"
+                options={{
+                    href: null,
+                }}
+            />
+            <Tabs.Screen
+                name="templates/[id]"
+                options={{
+                    href: null,
+                }}
+            />
+            <Tabs.Screen
+                name="templates/new"
+                options={{
+                    href: null,
                 }}
             />
         </Tabs>

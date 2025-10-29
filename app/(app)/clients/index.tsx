@@ -14,9 +14,9 @@ import { useStore } from "@/store";
 import { Client } from "@/lib/supabase/types";
 import React from "react";
 import EmptyState from "@/components/EmptyState";
-import { showToast } from "@/lib/toast";
 import { Skeleton } from "@/components/Skeleton";
 import { handleError } from "@/lib/errorHandler";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 function ClientCardSkeleton() {
     return (
@@ -132,15 +132,18 @@ export default function ClientsListScreen() {
     );
 
     return (
-        <View className="flex-1 bg-gray-50">
+        <>
             <Stack.Screen
                 options={{
                     title: "Clients",
+                    headerShown: true,
                     headerStyle: { backgroundColor: "#2563EB" },
                     headerTintColor: "white",
                     headerRight: () => (
                         <Pressable
-                            onPress={() => router.push("/clients/new")}
+                            onPress={() =>
+                                router.push(`/clients/new?t=${Date.now()}`)
+                            }
                             className="mr-4"
                         >
                             <Plus size={24} color="white" />
@@ -197,7 +200,9 @@ export default function ClientsListScreen() {
                     description="Keep track of your clients and quickly create estimates for them"
                     buttonText="Add First Client"
                     buttonIcon={Plus}
-                    onButtonPress={() => router.push("/clients/new")}
+                    onButtonPress={() =>
+                        router.push(`/clients/new?t=${Date.now()}`)
+                    }
                 />
             ) : filteredClients.length === 0 ? (
                 <EmptyState
@@ -226,11 +231,11 @@ export default function ClientsListScreen() {
             {!loading && (
                 <Pressable
                     className="absolute right-5 bottom-5 w-14 h-14 rounded-full bg-blue-600 items-center justify-center shadow-lg active:opacity-80"
-                    onPress={() => router.push("/clients/new")}
+                    onPress={() => router.push(`/clients/new?t=${Date.now()}`)}
                 >
                     <Plus size={28} color="white" />
                 </Pressable>
             )}
-        </View>
+        </>
     );
 }

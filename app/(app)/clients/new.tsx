@@ -1,63 +1,36 @@
-import { useEffect, useState } from "react";
+import { useState, useEffect } from "react";
 import {
     View,
     Text,
     TextInput,
     Pressable,
     ScrollView,
-    Alert,
     ActivityIndicator,
 } from "react-native";
-import { Stack, useLocalSearchParams, useRouter } from "expo-router";
-import { Trash2, Save } from "lucide-react-native";
+import { Stack, useRouter, useLocalSearchParams } from "expo-router";
+import { Save } from "lucide-react-native";
 import { supabase } from "@/lib/supabase/supabase";
 import { useStore } from "@/store";
 import React from "react";
 import { showToast } from "@/lib/toast";
 import { handleError } from "@/lib/errorHandler";
 
-export default function ClientDetailScreen() {
-    const params = useLocalSearchParams();
+export default function NewClientScreen() {
     const router = useRouter();
-    const { company, updateClient, deleteClient } = useStore();
-
-    const id = Array.isArray(params.id) ? params.id[0] : params.id;
-
-    const [loading, setLoading] = useState(true);
-    const [saving, setSaving] = useState(false);
+    const params = useLocalSearchParams();
+    const { company, addClient } = useStore();
     const [name, setName] = useState("");
     const [email, setEmail] = useState("");
     const [phone, setPhone] = useState("");
     const [address, setAddress] = useState("");
+    const [saving, setSaving] = useState(false);
 
     useEffect(() => {
-        loadClient();
-    }, [id]);
-
-    const loadClient = async () => {
-        try {
-            const { data, error } = await supabase
-                .from("clients")
-                .select("*")
-                .eq("id", id)
-                .single();
-
-            if (error) throw error;
-
-            setName(data.name);
-            setEmail(data.email || "");
-            setPhone(data.phone || "");
-            setAddress(data.address || "");
-        } catch (error: any) {
-            handleError(error, {
-                operation: "load client",
-                fallbackMessage: "Unable to load client",
-            });
-            router.back();
-        } finally {
-            setLoading(false);
-        }
-    };
+        setName("");
+        setEmail("");
+        setPhone("");
+        setAddress("");
+    }, [params.t]);
 
     const handleSave = async () => {
         if (!company || !name.trim()) {
@@ -70,87 +43,38 @@ export default function ClientDetailScreen() {
         try {
             const { data, error } = await supabase
                 .from("clients")
-                .update({
+                .insert({
+                    company_id: company.id,
                     name: name.trim(),
                     email: email.trim() || null,
                     phone: phone.trim() || null,
                     address: address.trim() || null,
                 })
-                .eq("id", id)
                 .select()
                 .single();
 
             if (error) throw error;
 
-            updateClient(id, data);
-            showToast.success("Client Updated", "Changes saved successfully");
-            router.back();
+            addClient(data);
+            showToast.success("Client Created", `${data.name} has been added`);
+            router.push("/clients");
         } catch (error: any) {
             handleError(error, {
-                operation: "update client",
-                fallbackMessage: "Unable to update client",
+                operation: "create client",
+                fallbackMessage: "Unable to create client",
             });
         } finally {
             setSaving(false);
         }
     };
 
-    const handleDelete = () => {
-        Alert.alert(
-            "Delete Client",
-            "Are you sure you want to delete this client?",
-            [
-                { text: "Cancel", style: "cancel" },
-                {
-                    text: "Delete",
-                    style: "destructive",
-                    onPress: async () => {
-                        try {
-                            const { error } = await supabase
-                                .from("clients")
-                                .delete()
-                                .eq("id", id);
-
-                            if (error) throw error;
-
-                            deleteClient(id);
-                            showToast.success(
-                                "Client Deleted",
-                                "Client removed successfully"
-                            );
-                            router.back();
-                        } catch (error: any) {
-                            handleError(error, {
-                                operation: "delete client",
-                                fallbackMessage: "Unable to delete client",
-                            });
-                        }
-                    },
-                },
-            ]
-        );
-    };
-
-    if (loading) {
-        return (
-            <View className="flex-1 justify-center items-center">
-                <ActivityIndicator size="large" color="#2563EB" />
-            </View>
-        );
-    }
-
     return (
         <View className="flex-1 bg-gray-50">
             <Stack.Screen
                 options={{
-                    title: "Edit Client",
+                    title: "New Client",
                     headerStyle: { backgroundColor: "#2563EB" },
                     headerTintColor: "white",
-                    headerRight: () => (
-                        <Pressable onPress={handleDelete} className="mr-4">
-                            <Trash2 size={22} color="white" />
-                        </Pressable>
-                    ),
                 }}
             />
 
@@ -165,6 +89,7 @@ export default function ClientDetailScreen() {
                             value={name}
                             onChangeText={setName}
                             placeholder="Client name"
+                            autoFocus
                             placeholderTextColor="#9CA3AF"
                             editable={!saving}
                         />
@@ -234,7 +159,7 @@ export default function ClientDetailScreen() {
                         <>
                             <Save size={20} color="white" />
                             <Text className="text-white text-base font-semibold ml-2">
-                                Save Changes
+                                Create Client
                             </Text>
                         </>
                     )}

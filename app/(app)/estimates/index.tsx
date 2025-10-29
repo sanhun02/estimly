@@ -1,5 +1,12 @@
 import { useEffect, useState } from "react";
-import { View, Text, FlatList, Pressable, RefreshControl } from "react-native";
+import {
+    View,
+    Text,
+    FlatList,
+    Pressable,
+    RefreshControl,
+    ScrollView,
+} from "react-native";
 import { Stack, useRouter } from "expo-router";
 import { Plus, FileText, DollarSign, Calendar } from "lucide-react-native";
 import { supabase } from "@/lib/supabase/supabase";
@@ -7,17 +14,17 @@ import { useStore } from "@/store";
 import { Estimate } from "@/lib/supabase/types";
 import React from "react";
 import EmptyState from "@/components/EmptyState";
-import { showToast } from "@/lib/toast";
 import { Skeleton } from "@/components/Skeleton";
 import { handleError } from "@/lib/errorHandler";
 
-type FilterStatus = "all" | "draft" | "sent" | "accepted";
+type FilterStatus = "all" | "draft" | "sent" | "accepted" | "paid";
 
 const STATUS_COLORS = {
     draft: "bg-gray-100 text-gray-700",
     sent: "bg-blue-100 text-blue-700",
     accepted: "bg-green-100 text-green-700",
     declined: "bg-red-100 text-red-700",
+    paid: "bg-emerald-100 text-emerald-700",
     invoiced: "bg-purple-100 text-purple-700",
 };
 
@@ -132,6 +139,7 @@ export default function EstimatesScreen() {
         draft: estimates.filter((e) => e.status === "draft").length,
         sent: estimates.filter((e) => e.status === "sent").length,
         accepted: estimates.filter((e) => e.status === "accepted").length,
+        paid: estimates.filter((e) => e.status === "paid").length,
     };
 
     const renderFilterButton = (filter: FilterStatus, label: string) => {
@@ -223,10 +231,11 @@ export default function EstimatesScreen() {
     };
 
     return (
-        <View className="flex-1 bg-gray-50">
+        <>
             <Stack.Screen
                 options={{
                     title: "Estimates",
+                    headerShown: true,
                     headerStyle: { backgroundColor: "#2563EB" },
                     headerTintColor: "white",
                     headerRight: () => (
@@ -245,12 +254,17 @@ export default function EstimatesScreen() {
                 {loading ? (
                     <FilterButtonsSkeleton />
                 ) : (
-                    <View className="flex-row">
+                    <ScrollView
+                        horizontal
+                        showsHorizontalScrollIndicator={false}
+                        contentContainerStyle={{ paddingHorizontal: 16 }}
+                    >
                         {renderFilterButton("all", "All")}
                         {renderFilterButton("draft", "Draft")}
                         {renderFilterButton("sent", "Sent")}
                         {renderFilterButton("accepted", "Accepted")}
-                    </View>
+                        {renderFilterButton("paid", "Paid")}
+                    </ScrollView>
                 )}
             </View>
 
@@ -311,6 +325,6 @@ export default function EstimatesScreen() {
                     <Plus size={28} color="white" />
                 </Pressable>
             )}
-        </View>
+        </>
     );
 }

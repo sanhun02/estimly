@@ -22,7 +22,6 @@ import { useStore } from "@/store";
 import { Estimate } from "@/lib/supabase/types";
 import React from "react";
 import EmptyState from "@/components/EmptyState";
-import { showToast } from "@/lib/toast";
 import { Skeleton } from "@/components/Skeleton";
 import { handleError } from "@/lib/errorHandler";
 
@@ -173,14 +172,6 @@ export default function Dashboard() {
             day: "numeric",
         });
     };
-
-    // if (loading) {
-    //     return (
-    //         <View className="flex-1 justify-center items-center bg-gray-50">
-    //             <ActivityIndicator size="large" color="#2563EB" />
-    //         </View>
-    //     );
-    // }
 
     return (
         <ScrollView
@@ -425,7 +416,13 @@ export default function Dashboard() {
                                                       : estimate.status ===
                                                           "accepted"
                                                         ? "bg-green-100"
-                                                        : "bg-gray-100"
+                                                        : estimate.status ===
+                                                            "declined"
+                                                          ? "bg-red-100"
+                                                          : estimate.status ===
+                                                              "paid"
+                                                            ? "bg-emerald-100"
+                                                            : "bg-gray-100"
                                             }`}
                                         >
                                             <Text
@@ -438,7 +435,10 @@ export default function Dashboard() {
                                                           : estimate.status ===
                                                               "accepted"
                                                             ? "text-green-700"
-                                                            : "text-gray-700"
+                                                            : estimate.status ===
+                                                                "paid"
+                                                              ? "text-emerald-700"
+                                                              : "text-gray-700"
                                                 }`}
                                             >
                                                 {estimate.status}

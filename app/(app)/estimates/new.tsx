@@ -225,13 +225,21 @@ export default function NewEstimateScreen() {
             const total = calculateTotal();
             const deposit = calculateDeposit();
 
+            // generate unique estimate number
+            const { count } = await supabase
+                .from("estimates")
+                .select("*", { count: "exact", head: true })
+                .eq("company_id", company.id);
+
+            const estimateNumber = `EST-${String((count || 0) + 1).padStart(4, "0")}`;
+
             // create estimate
             const { data: estimate, error: estimateError } = await supabase
                 .from("estimates")
                 .insert({
                     company_id: company.id,
                     client_id: selectedClientId,
-                    estimate_number: "",
+                    estimate_number: estimateNumber,
                     subtotal,
                     tax,
                     total,

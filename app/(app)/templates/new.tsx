@@ -134,7 +134,7 @@ export default function NewTemplateScreen() {
 
             addTemplate(template);
             showToast.success("Success!", "Template created");
-            router.back();
+            router.push("/templates");
         } catch (error: any) {
             handleError(error, {
                 operation: "create template",

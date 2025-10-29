@@ -8,17 +8,26 @@ import {
     Alert,
 } from "react-native";
 import { Stack, useLocalSearchParams, useRouter } from "expo-router";
-import { Trash2, Mail, FileText } from "lucide-react-native";
+import {
+    Trash2,
+    Mail,
+    FileText,
+    Copy,
+    MoreVertical,
+    Eye,
+} from "lucide-react-native";
 import { supabase } from "@/lib/supabase/supabase";
 import { useStore } from "@/store";
 import React from "react";
 import { showToast } from "@/lib/toast";
-import { Client, Estimate, EstimateItem } from "@/lib/supabase/types";
+import { Client, Company, Estimate, EstimateItem } from "@/lib/supabase/types";
+import { handleError } from "@/lib/errorHandler";
+import EstimatePreview from "@/components/EstimatePreview";
 
 export default function EstimateDetailScreen() {
     const params = useLocalSearchParams();
     const router = useRouter();
-    const { deleteEstimate } = useStore();
+    const { deleteEstimate, addEstimate } = useStore();
 
     const id = Array.isArray(params.id) ? params.id[0] : params.id;
 
@@ -27,6 +36,9 @@ export default function EstimateDetailScreen() {
     const [items, setItems] = useState<EstimateItem[]>([]);
     const [client, setClient] = useState<Client | null>(null);
     const [sending, setSending] = useState(false);
+    const [showMenu, setShowMenu] = useState(false);
+    const [showPreview, setShowPreview] = useState(false);
+    const [company, setCompany] = useState<Company | null>(null);
 
     useEffect(() => {
         loadEstimate();
@@ -65,14 +77,29 @@ export default function EstimateDetailScreen() {
                 if (clientError) throw clientError;
                 setClient(clientData);
             }
+
+            // load company info
+            const { data: companyData, error: companyError } = await supabase
+                .from("companies")
+                .select("*")
+                .eq("id", estimateData.company_id)
+                .single();
+
+            if (!companyError && companyData) {
+                setCompany(companyData);
+            }
         } catch (error: any) {
-            alert(error.message);
+            handleError(error, {
+                operation: "load estimate",
+                fallbackMessage: "Unable to load estimate",
+            });
         } finally {
             setLoading(false);
         }
     };
 
     const handleDelete = () => {
+        setShowMenu(false);
         Alert.alert(
             "Delete Estimate",
             "Are you sure you want to delete this estimate?",
@@ -90,9 +117,118 @@ export default function EstimateDetailScreen() {
 
                             if (error) throw error;
                             deleteEstimate(id);
+                            showToast.success("Deleted", "Estimate deleted");
                             router.back();
                         } catch (error: any) {
-                            alert(error.message);
+                            handleError(error, {
+                                operation: "delete estimate",
+                                fallbackMessage: "Unable to delete estimate",
+                            });
+                        }
+                    },
+                },
+            ]
+        );
+    };
+
+    const handleDuplicate = () => {
+        setShowMenu(false);
+        if (!estimate) return;
+
+        Alert.alert(
+            "Duplicate Estimate",
+            "Create a copy of this estimate as a new draft?",
+            [
+                { text: "Cancel", style: "cancel" },
+                {
+                    text: "Duplicate",
+                    onPress: async () => {
+                        setLoading(true);
+
+                        try {
+                            // generate unique estimate number
+                            const { count } = await supabase
+                                .from("estimates")
+                                .select("*", { count: "exact", head: true })
+                                .eq("company_id", estimate.company_id);
+
+                            const estimateNumber = `EST-${String((count || 0) + 1).padStart(4, "0")}`;
+
+                            // create new estimate
+                            const { data: newEstimate, error: estimateError } =
+                                await supabase
+                                    .from("estimates")
+                                    .insert({
+                                        company_id: estimate.company_id,
+                                        client_id: estimate.client_id,
+                                        estimate_number: estimateNumber,
+                                        subtotal: estimate.subtotal,
+                                        tax: estimate.tax,
+                                        total: estimate.total,
+                                        deposit_percent:
+                                            estimate.deposit_percent,
+                                        deposit_amount: estimate.deposit_amount,
+                                        notes: estimate.notes,
+                                        terms: estimate.terms,
+                                        status: "draft",
+                                    })
+                                    .select()
+                                    .single();
+
+                            if (estimateError) throw estimateError;
+
+                            // load original estimate items
+                            const {
+                                data: originalItems,
+                                error: itemsLoadError,
+                            } = await supabase
+                                .from("estimate_items")
+                                .select("*")
+                                .eq("estimate_id", estimate.id)
+                                .order("sort_order");
+
+                            if (itemsLoadError) throw itemsLoadError;
+
+                            // copy items to new estimate
+                            if (originalItems && originalItems.length > 0) {
+                                const newItems = originalItems.map((item) => ({
+                                    estimate_id: newEstimate.id,
+                                    description: item.description,
+                                    quantity: item.quantity,
+                                    unit_price: item.unit_price,
+                                    labor_hours: item.labor_hours,
+                                    labor_rate: item.labor_rate,
+                                    taxable: item.taxable,
+                                    sort_order: item.sort_order,
+                                }));
+
+                                const { error: itemsInsertError } =
+                                    await supabase
+                                        .from("estimate_items")
+                                        .insert(newItems);
+
+                                if (itemsInsertError) throw itemsInsertError;
+                            }
+
+                            addEstimate(newEstimate);
+                            showToast.success(
+                                "Estimate Duplicated!",
+                                `New draft #${newEstimate.estimate_number} created`
+                            );
+
+                            // navigate to the new estimate
+                            router.replace(`/estimates/${newEstimate.id}`);
+                        } catch (error: any) {
+                            console.error(
+                                "Error during duplicate estimate:",
+                                error
+                            );
+                            handleError(error, {
+                                operation: "duplicate estimate",
+                                fallbackMessage: "Unable to duplicate estimate",
+                            });
+                        } finally {
+                            setLoading(false);
                         }
                     },
                 },
@@ -116,7 +252,10 @@ export default function EstimateDetailScreen() {
             showToast.success("PDF Generated", "Estimate is ready to send");
             loadEstimate();
         } catch (error: any) {
-            showToast.error("Failed to generate PDF", error.message);
+            handleError(error, {
+                operation: "generate PDF",
+                fallbackMessage: "Unable to generate PDF",
+            });
         } finally {
             setSending(false);
         }
@@ -124,7 +263,7 @@ export default function EstimateDetailScreen() {
 
     const handleSendEstimate = async () => {
         if (!client?.email) {
-            alert("This client has no email address");
+            showToast.error("No Email", "This client has no email address");
             return;
         }
 
@@ -159,7 +298,10 @@ export default function EstimateDetailScreen() {
             showToast.success("Estimate Sent!", `Sent to ${client.email}`);
             await loadEstimate();
         } catch (error: any) {
-            showToast.error("Failed to send estimate", error.message);
+            handleError(error, {
+                operation: "send estimate",
+                fallbackMessage: "Unable to send estimate",
+            });
         } finally {
             setSending(false);
         }
@@ -204,12 +346,59 @@ export default function EstimateDetailScreen() {
                     headerStyle: { backgroundColor: "#2563EB" },
                     headerTintColor: "white",
                     headerRight: () => (
-                        <Pressable onPress={handleDelete} className="mr-4">
-                            <Trash2 size={22} color="white" />
+                        <Pressable
+                            onPress={() => setShowMenu(!showMenu)}
+                            className="mr-4"
+                        >
+                            <MoreVertical size={22} color="white" />
                         </Pressable>
                     ),
                 }}
             />
+
+            {/* Dropdown Menu */}
+            {showMenu && (
+                <View className="absolute top-14 right-4 bg-white rounded-lg shadow-lg border border-gray-200 z-50">
+                    <Pressable
+                        onPress={() => {
+                            setShowMenu(false);
+                            setShowPreview(true);
+                        }}
+                        className="flex-row items-center px-4 py-3 border-b border-gray-100 active:bg-gray-50"
+                    >
+                        <Eye size={18} color="#374151" />
+                        <Text className="text-gray-900 font-medium ml-3">
+                            Preview
+                        </Text>
+                    </Pressable>
+                    <Pressable
+                        onPress={handleDuplicate}
+                        className="flex-row items-center px-4 py-3 border-b border-gray-100 active:bg-gray-50"
+                    >
+                        <Copy size={18} color="#374151" />
+                        <Text className="text-gray-900 font-medium ml-3">
+                            Duplicate
+                        </Text>
+                    </Pressable>
+                    <Pressable
+                        onPress={handleDelete}
+                        className="flex-row items-center px-4 py-3 active:bg-gray-50"
+                    >
+                        <Trash2 size={18} color="#EF4444" />
+                        <Text className="text-red-600 font-medium ml-3">
+                            Delete
+                        </Text>
+                    </Pressable>
+                </View>
+            )}
+
+            {/* Overlay to close menu */}
+            {showMenu && (
+                <Pressable
+                    className="absolute inset-0 z-40"
+                    onPress={() => setShowMenu(false)}
+                />
+            )}
 
             <ScrollView className="flex-1">
                 <View className="p-4">
@@ -229,7 +418,9 @@ export default function EstimateDetailScreen() {
                                             ? "bg-green-100"
                                             : estimate.status === "declined"
                                               ? "bg-red-100"
-                                              : "bg-purple-100"
+                                              : estimate.status === "paid"
+                                                ? "bg-emerald-100"
+                                                : "bg-purple-100"
                                 }`}
                             >
                                 <Text
@@ -242,7 +433,9 @@ export default function EstimateDetailScreen() {
                                                 ? "text-green-700"
                                                 : estimate.status === "declined"
                                                   ? "text-red-700"
-                                                  : "text-purple-700"
+                                                  : estimate.status === "paid"
+                                                    ? "text-emerald-700" 
+                                                    : "text-purple-700"
                                     }`}
                                 >
                                     {estimate.status}
@@ -258,6 +451,11 @@ export default function EstimateDetailScreen() {
                         {estimate.accepted_at && (
                             <Text className="text-sm text-green-600 font-semibold mt-2">
                                 ✓ Accepted {formatDate(estimate.accepted_at)}
+                            </Text>
+                        )}
+                        {estimate.paid_at && (
+                            <Text className="text-sm text-emerald-600 font-semibold mt-2">
+                                ✓ Paid {formatDate(estimate.paid_at)}
                             </Text>
                         )}
                         {estimate.signature && (
@@ -452,6 +650,15 @@ export default function EstimateDetailScreen() {
                     </Pressable>
                 </View>
             )}
+
+            <EstimatePreview
+                visible={showPreview}
+                onClose={() => setShowPreview(false)}
+                estimate={estimate}
+                items={items}
+                client={client}
+                company={company}
+            />
         </View>
     );
 }
